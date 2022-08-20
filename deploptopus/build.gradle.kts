@@ -1,3 +1,4 @@
+val kotlinVersion: String by project
 val ktorVersion: String by project
 val logbackVersion: String by project
 
@@ -46,6 +47,11 @@ kotlin {
         val nativeTest by getting {
             kotlin.srcDir("src/test")
             resources.srcDir("src/test/resources")
+            dependencies {
+                implementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
+                implementation("io.ktor:ktor-server-test-host:$ktorVersion")
+                implementation("io.ktor:ktor-client-json-tests:1.6.2")
+            }
         }
     }
 }
