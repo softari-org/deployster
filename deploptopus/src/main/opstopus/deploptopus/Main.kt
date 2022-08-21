@@ -57,9 +57,11 @@ fun main() {
                     )
                 }
 
-                // We get the type of the request from the event name header.
-                // With that, we can fetch the corresponding data class which the
-                // request payload will fit into, and then de-serialize the request.
+                /*
+                 * We get the type of the request from the event name header.
+                 * With that, we can fetch the corresponding data class which the
+                 * request payload will fit into, and then de-serialize the request.
+                 */
                 val payload = this.call.receive(EventType[eventName].payloadType)
             }
         }
