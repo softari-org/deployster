@@ -12,3 +12,8 @@ open class HttpException(override val message: String, val status: HttpStatusCod
  * HTTP 400 Bad request
  */
 class BadRequest(message: String) : HttpException(message, HttpStatusCode.BadRequest)
+
+/**
+ * HTTP 404 Not found
+ */
+class NotFound(message: String) : HttpException(message, HttpStatusCode.NotFound)
