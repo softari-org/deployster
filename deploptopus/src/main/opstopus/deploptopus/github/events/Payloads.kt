@@ -64,7 +64,7 @@ data class RepositoryPayload(
     @SerialName("tags_url") val tagsURL: SerializableURL,
     @SerialName("blobs_url") val blobsURL: SerializableURL,
     @SerialName("git_tags_url") val gitTagsURL: SerializableURL,
-    @SerialName("git_refs_ur") val gitRefsURL: SerializableURL,
+    @SerialName("git_refs_url") val gitRefsURL: SerializableURL,
     @SerialName("trees_url") val treesURL: SerializableURL,
     @SerialName("statuses_url") val statusesURL: SerializableURL,
     @SerialName("languages_url") val languagesURL: SerializableURL,
@@ -75,7 +75,7 @@ data class RepositoryPayload(
     @SerialName("commits_url") val commitsURL: SerializableURL,
     @SerialName("git_commits_url") val gitCommitsURL: SerializableURL,
     @SerialName("comments_url") val commentsURL: SerializableURL,
-    @SerialName("issue_comments_url") val issueCommentsURL: SerializableURL,
+    @SerialName("issue_comment_url") val issueCommentsURL: SerializableURL,
     @SerialName("contents_url") val contentsURL: SerializableURL,
     @SerialName("compare_url") val compareURL: SerializableURL,
     @SerialName("merges_url") val mergesURL: SerializableURL,
@@ -92,7 +92,7 @@ data class RepositoryPayload(
     @SerialName("updated_at") val updatedAt: Instant,
     @SerialName("pushed_at") val pushedAt: Instant,
     @SerialName("git_url") val gitURL: SerializableURL,
-    @SerialName("ssh_url") val sshURL: SerializableURL,
+    @SerialName("ssh_url") val sshURL: String,
     @SerialName("clone_url") val cloneURL: SerializableURL,
     @SerialName("svn_url") val svnURL: SerializableURL,
     val homepage: SerializableURL?,
@@ -272,6 +272,5 @@ data class PackageEventPayload(
     override val action: String,
     @SerialName("package") val pkg: PackagePayload,
     override val repository: RepositoryPayload,
-    override val organization: OrganizationPayload,
     override val sender: SenderPayload
 ) : EventPayload()
