@@ -24,9 +24,11 @@ fun main() {
             json()
         }
         install(StatusPages) {
-            // This is the base exception handler for otherwise unhandled exceptions.
-            // It must remain at the top of this plugin declaration because of
-            // weird rules that are used to resolve the right handler
+            /*
+             * This is the base exception handler for otherwise unhandled exceptions.
+             * It must remain at the top of this plugin declaration because of
+             * weird rules that are used to resolve the right handler
+             */
             exception<Throwable> { call, exc ->
                 call.application.log.error("Unhandled error", exc)
                 call.respond(
