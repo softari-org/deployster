@@ -75,8 +75,9 @@ internal fun Routing.registerWebhookEndpoint(config: Config) {
          * With that, we can fetch the corresponding data class which the
          * request payload will fit into, and then de-serialize the request.
          */
-        val event = EventType[eventName]
+        val event: EventType
         try {
+            event = EventType[eventName]
             val payload = event.payloadType.cast(this.call.receive(event.payloadType))
             this.application.log.debug("Received payload ${Json.encodeToString(payload)}")
         } catch (e: NotFound) {
