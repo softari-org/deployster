@@ -5,6 +5,7 @@ import io.ktor.http.Url
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import opstopus.deploptopus.ContentTypeSerializer
 import opstopus.deploptopus.URLSerializer
 
@@ -173,12 +174,13 @@ data class InstallationPayload(
  * Represents the common properties shared by every event payload. All event payload
  * data classes must implement this class.
  */
+@Serializable
 sealed class EventPayload {
     abstract val action: String
     abstract val sender: SenderPayload
-    open val repository: RepositoryPayload? = null
-    open val organization: OrganizationPayload? = null
-    open val installation: InstallationPayload? = null
+    abstract val repository: RepositoryPayload?
+    abstract val organization: OrganizationPayload?
+    abstract val installation: InstallationPayload?
 }
 
 @Serializable
@@ -270,7 +272,9 @@ data class PackagePayload(
 @Serializable
 data class PackageEventPayload(
     override val action: String,
-    @SerialName("package") val pkg: PackagePayload,
+    override val sender: SenderPayload,
     override val repository: RepositoryPayload,
-    override val sender: SenderPayload
+    @SerialName("package") val pkg: PackagePayload,
+    @Transient override val organization: OrganizationPayload? = null,
+    @Transient override val installation: InstallationPayload? = null
 ) : EventPayload()
