@@ -173,7 +173,7 @@ data class InstallationPayload(
  * Represents the common properties shared by every event payload. All event payload
  * data classes must implement this class.
  */
-abstract class EventPayload {
+sealed class EventPayload {
     abstract val action: String
     abstract val sender: SenderPayload
     open val repository: RepositoryPayload? = null

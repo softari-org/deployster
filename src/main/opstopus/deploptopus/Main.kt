@@ -21,9 +21,9 @@ import io.ktor.server.routing.routing
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import opstopus.deploptopus.github.GitHubHeaders
-import opstopus.deploptopus.github.events.EventPayload
 import opstopus.deploptopus.github.events.EventType
 import opstopus.deploptopus.system.runner.Runner
+import kotlin.reflect.cast
 
 internal fun Application.registerSerializers() {
     this.install(ContentNegotiation) {
@@ -76,9 +76,8 @@ internal fun Routing.registerWebhookEndpoint(config: Config) {
          * request payload will fit into, and then de-serialize the request.
          */
         val event = EventType[eventName]
-        val payload: EventPayload
         try {
-            payload = this.call.receive(event.payloadType)
+            val payload = event.payloadType.cast(this.call.receive(event.payloadType))
             this.application.log.debug("Received payload ${Json.encodeToString(payload)}")
         } catch (e: NotFound) {
             this.call.application.log.error(
