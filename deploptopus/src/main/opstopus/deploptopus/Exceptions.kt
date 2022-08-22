@@ -17,3 +17,11 @@ class BadRequest(message: String) : HttpException(message, HttpStatusCode.BadReq
  * HTTP 404 Not found
  */
 class NotFound(message: String) : HttpException(message, HttpStatusCode.NotFound)
+
+/**
+ * HTTP 500 Internal server error
+ */
+class InternalServerError(message: String) : HttpException(
+    message,
+    HttpStatusCode.InternalServerError
+)
