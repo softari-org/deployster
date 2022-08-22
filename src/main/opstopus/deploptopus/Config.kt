@@ -9,7 +9,7 @@ import opstopus.deploptopus.system.FileIO
 import opstopus.deploptopus.system.FileIOException
 import platform.posix.F_OK
 import platform.posix.access
-import platform.posix.exit
+import kotlin.system.exitProcess
 
 /**
  * Represents a single trigger
@@ -43,26 +43,23 @@ data class Config(val triggers: List<Trigger>) {
             } else {
                 args.getOrElse(configFilePosition) {
                     log.error("Passed '-f', but no config file location provided.")
-                    exit(1)
-                    ""
+                    exitProcess(1)
                 }
             }
 
             // If config file doesn't exist, exit because we don't know how to handle requests
             if (access(configFilePath, F_OK) != 0) {
                 log.error("Config file at $configFilePath doesn't exist.")
-                exit(1)
+                exitProcess(1)
             }
 
             // Load the contents of the config into a String
             val configFile: FileIO
             try {
                 configFile = FileIO(configFilePath)
-            } catch (e: FileIOException) {
+            } catch (_: FileIOException) {
                 log.error("Could not read config file at $configFilePath")
-                exit(1)
-                // Make the compiler happy
-                throw e
+                exitProcess(1)
             }
             return Json.decodeFromString(configFile.read())
         }
