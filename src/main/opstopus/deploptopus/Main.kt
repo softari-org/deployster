@@ -12,7 +12,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.header
-import io.ktor.server.request.receive
+import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
@@ -20,10 +20,10 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import opstopus.deploptopus.github.Crypto
 import opstopus.deploptopus.github.GitHubHeaders
 import opstopus.deploptopus.github.events.EventType
 import opstopus.deploptopus.system.runner.Runner
-import kotlin.reflect.cast
 
 internal fun Application.registerSerializers() {
     this.install(ContentNegotiation) {
@@ -75,19 +75,24 @@ internal fun Routing.registerWebhookEndpoint(config: Config) {
          * With that, we can fetch the corresponding data class which the
          * request payload will fit into, and then de-serialize the request.
          */
-        val event: EventType
+        val eventType: EventType
+        val requestBody = this.call.receiveText()
         try {
-            event = EventType[eventName]
-            val payload = event.payloadType.cast(this.call.receive(event.payloadType))
-            this.application.log.debug("Received payload ${Json.encodeToString(payload)}")
+            eventType = EventType[eventName]
+            this.application.log.debug("Received payload $requestBody")
         } catch (e: NotFound) {
             this.call.application.log.error(
                 "Received an unsupported webhook event"
             )
             throw e
         }
-        val triggersToRun = config.triggers.filter { it.on == event }
+        val triggersToRun = config.triggers.filter { it.on == eventType }
         val outputs = triggersToRun.map {
+            Crypto.verifySignature(
+                requestBody,
+                config.githubSecret,
+                this.call.request.header("X-Hub-Signature-256") ?: ""
+            )
             Runner.runRemote(
                 it.user,
                 it.host,
