@@ -5,7 +5,7 @@ import io.ktor.http.Url
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
+import kotlinx.serialization.json.JsonElement
 import opstopus.deploptopus.ContentTypeSerializer
 import opstopus.deploptopus.URLSerializer
 
@@ -295,6 +295,24 @@ data class PackagePayload(
     val registry: PackageRegistryPayload
 )
 
+@Serializable
+data class DeploymentPayload(
+    val url: SerializableURL,
+    val id: UInt,
+    @SerialName("node_id") val nodeID: String,
+    val sha: String,
+    val ref: String,
+    val task: String,
+    val payload: JsonElement,
+    val environment: String,
+    val description: String?,
+    val creator: SenderPayload?,
+    @SerialName("created_at") val createdAt: Instant,
+    @SerialName("updated_at") val updatedAt: Instant,
+    @SerialName("statuses_url") val statusesURL: SerializableURL,
+    @SerialName("repository_url") val repositoryURL: SerializableURL
+)
+
 /**
  * Represents the body of a package event payload
  * https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#package
@@ -305,8 +323,8 @@ data class PackageEventPayload(
     override val sender: SenderPayload,
     override val repository: RepositoryPayload,
     @SerialName("package") val pkg: PackagePayload,
-    @Transient override val organization: OrganizationPayload? = null,
-    @Transient override val installation: InstallationPayload? = null
+    override val organization: OrganizationPayload? = null,
+    override val installation: InstallationPayload? = null
 ) : EventPayload()
 
 /**
@@ -320,6 +338,19 @@ data class PingEventPayload(
     override val repository: RepositoryPayload,
     override val sender: SenderPayload,
     override val organization: OrganizationPayload?,
-    @Transient override val action: String? = null,
-    @Transient override val installation: InstallationPayload? = null
+    override val action: String? = null,
+    override val installation: InstallationPayload? = null
+) : EventPayload()
+
+/**
+ * Represents the body of a deployment event payload
+ */
+@Serializable
+data class DeploymentEventPayload(
+    override val action: String,
+    val deployment: DeploymentPayload,
+    override val repository: RepositoryPayload,
+    override val sender: SenderPayload,
+    override val organization: OrganizationPayload? = null,
+    override val installation: InstallationPayload? = null
 ) : EventPayload()
