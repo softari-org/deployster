@@ -14,12 +14,18 @@ import platform.posix.access
 import platform.posix.getenv
 import kotlin.system.exitProcess
 
+@Serializable
+data class RepositoryEvent(
+    val event: EventType,
+    val repository: String
+)
+
 /**
  * Represents a single trigger
  */
 @Serializable
 data class Trigger(
-    val on: EventType,
+    val on: RepositoryEvent,
     val command: String,
     val user: String,
     val host: String,
