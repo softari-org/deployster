@@ -30,6 +30,7 @@ internal object EventTypeSerializer : KSerializer<EventType> {
  */
 @Serializable(with = EventTypeSerializer::class)
 enum class EventType(val eventName: String, val payloadType: KClass<out EventPayload>) {
+    PING("ping", PingEventPayload::class),
     PACKAGE("package", PackageEventPayload::class);
 
     companion object {

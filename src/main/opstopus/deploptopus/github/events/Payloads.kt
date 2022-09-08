@@ -22,7 +22,7 @@ typealias SerializableContentType = (
 @Serializable
 data class SenderPayload(
     val login: String,
-    val id: Int,
+    val id: UInt,
     @SerialName("node_id") val nodeID: String,
     @SerialName("avatar_url") val avatarURL: SerializableURL,
     @SerialName("gravatar_id") val gravatarID: String,
@@ -43,7 +43,7 @@ data class SenderPayload(
 
 @Serializable
 data class RepositoryPayload(
-    val id: Int,
+    val id: UInt,
     @SerialName("node_id") val nodeID: String,
     val name: String,
     @SerialName("full_name") val fullName: String,
@@ -97,30 +97,30 @@ data class RepositoryPayload(
     @SerialName("clone_url") val cloneURL: SerializableURL,
     @SerialName("svn_url") val svnURL: SerializableURL,
     val homepage: SerializableURL?,
-    val size: Int,
-    @SerialName("stargazers_count") val stargazersCount: Int,
-    @SerialName("watchers_count") val watchersCount: Int,
+    val size: UInt,
+    @SerialName("stargazers_count") val stargazersCount: UInt,
+    @SerialName("watchers_count") val watchersCount: UInt,
     val language: String,
     @SerialName("has_issues") val hasIssues: Boolean,
     @SerialName("has_projects") val hasProjects: Boolean,
     @SerialName("has_downloads") val hasDownloads: Boolean,
     @SerialName("has_wiki") val hasWiki: Boolean,
     @SerialName("has_pages") val hasPages: Boolean,
-    @SerialName("forks_count") val forksCount: Int,
+    @SerialName("forks_count") val forksCount: UInt,
     @SerialName("mirror_url") val mirrorURL: SerializableURL?,
     val archived: Boolean,
     val disabled: Boolean,
-    @SerialName("open_issues_count") val openIssuesCount: Int,
+    @SerialName("open_issues_count") val openIssuesCount: UInt,
     val license: String?,
-    val forks: Int,
-    @SerialName("open_issues") val openIssues: Int,
-    val watchers: Int,
+    val forks: UInt,
+    @SerialName("open_issues") val openIssues: UInt,
+    val watchers: UInt,
     @SerialName("default_branch") val defaultBranch: String
 )
 
 @Serializable
 data class PartialRepositoryPayload(
-    val id: Int,
+    val id: UInt,
     @SerialName("node_id") val nodeID: String,
     val name: String,
     @SerialName("full_name") val fullName: String,
@@ -130,7 +130,7 @@ data class PartialRepositoryPayload(
 @Serializable
 data class OrganizationPayload(
     val login: String,
-    val id: Int,
+    val id: UInt,
     @SerialName("node_id") val nodeID: String,
     val url: SerializableURL,
     @SerialName("repos_url") val reposURL: SerializableURL,
@@ -152,14 +152,14 @@ data class PermissionsPayload(
 
 @Serializable
 data class InstallationPayload(
-    val id: Int,
+    val id: UInt,
     val account: SenderPayload,
     @SerialName("repository_selection") val repositorySelection: String,
     @SerialName("access_tokens_url") val accessTokensURL: SerializableURL,
     @SerialName("repositories_url") val repositoriesURL: SerializableURL,
     @SerialName("html_url") val htmlURL: SerializableURL,
-    @SerialName("app_id") val appID: Int,
-    @SerialName("target_id") val targetID: Int,
+    @SerialName("app_id") val appID: UInt,
+    @SerialName("target_id") val targetID: UInt,
     @SerialName("target_type") val targetType: String,
     val permissions: PermissionsPayload,
     val events: List<String>,
@@ -170,13 +170,43 @@ data class InstallationPayload(
     val sender: SenderPayload
 )
 
+@Serializable
+data class ConfigPayload(
+    @SerialName("content_type") val contentType: SerializableContentType,
+    val url: SerializableURL,
+    @SerialName("insecure_ssl") val insecureSSL: String
+)
+
+@Serializable
+data class HookResponsePayload(
+    val code: UInt?,
+    val status: String,
+    val message: String?
+)
+
+@Serializable
+data class HookPayload(
+    val type: String,
+    val id: UInt,
+    val name: String,
+    val active: Boolean,
+    val events: List<String>,
+    val config: ConfigPayload,
+    @SerialName("updated_at") val updatedAt: Instant,
+    @SerialName("created_at") val createdAt: Instant,
+    val url: SerializableURL,
+    @SerialName("test_url") val testURL: SerializableURL,
+    @SerialName("ping_url") val pingURL: SerializableURL,
+    @SerialName("last_response") val lastResponse: HookResponsePayload
+)
+
 /**
  * Represents the common properties shared by every event payload. All event payload
  * data classes must implement this class.
  */
 @Serializable
 sealed class EventPayload {
-    abstract val action: String
+    abstract val action: String?
     abstract val sender: SenderPayload
     abstract val repository: RepositoryPayload?
     abstract val organization: OrganizationPayload?
@@ -186,14 +216,14 @@ sealed class EventPayload {
 @Serializable
 data class FilePayload(
     @SerialName("download_url") val downloadURL: SerializableURL,
-    val id: Int,
+    val id: UInt,
     val name: String,
     val sha256: String,
     val sha1: String,
     val md5: String,
     @SerialName("content_type") val contentType: SerializableContentType,
     val state: String,
-    val size: Int,
+    val size: UInt,
     @SerialName("created_at") val createdAt: Instant,
     @SerialName("updated_at") val updatedAt: Instant
 )
@@ -202,7 +232,7 @@ data class FilePayload(
 data class ReleasePayload(
     val url: SerializableURL,
     @SerialName("html_url") val htmlUrl: SerializableURL,
-    val id: Int,
+    val id: UInt,
     @SerialName("tag_name") val tagName: String,
     @SerialName("target_commitish") val targetCommitish: String,
     val name: String,
@@ -215,7 +245,7 @@ data class ReleasePayload(
 
 @Serializable
 data class PackageVersionPayload(
-    val id: Int,
+    val id: UInt,
     val version: String,
     val summary: String,
     val name: String,
@@ -251,7 +281,7 @@ data class PackageRegistryPayload(
 
 @Serializable
 data class PackagePayload(
-    val id: Int,
+    val id: UInt,
     val name: String,
     val namespace: String,
     val description: String?,
@@ -276,5 +306,20 @@ data class PackageEventPayload(
     override val repository: RepositoryPayload,
     @SerialName("package") val pkg: PackagePayload,
     @Transient override val organization: OrganizationPayload? = null,
+    @Transient override val installation: InstallationPayload? = null
+) : EventPayload()
+
+/**
+ * Represents the body of a ping event payload
+ */
+@Serializable
+data class PingEventPayload(
+    val zen: String,
+    @SerialName("hook_id") val hookID: UInt,
+    val hook: HookPayload,
+    override val repository: RepositoryPayload,
+    override val sender: SenderPayload,
+    override val organization: OrganizationPayload?,
+    @Transient override val action: String? = null,
     @Transient override val installation: InstallationPayload? = null
 ) : EventPayload()
