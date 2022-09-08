@@ -2,6 +2,7 @@ package opstopus.deploptopus.system.runner
 
 import opstopus.deploptopus.InternalServerError
 import opstopus.deploptopus.system.FileIO
+import platform.posix.EXIT_SUCCESS
 import platform.posix.pclose
 import platform.posix.popen
 
@@ -26,7 +27,16 @@ object Runner {
             closeWith = { pclose(it) }
         )
 
-        // Get the output from our command
-        return io.read()
+        // Get the output from our command, and check if it succeeded
+        val output = io.read()
+        val exitStatus = io.close()
+
+        if (exitStatus != EXIT_SUCCESS) {
+            throw InternalServerError(
+                "Deployment process failed with exit code $exitStatus: $output"
+            )
+        }
+
+        return output
     }
 }
