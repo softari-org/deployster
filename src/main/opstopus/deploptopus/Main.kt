@@ -18,10 +18,12 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import opstopus.deploptopus.github.Crypto
 import opstopus.deploptopus.github.GitHubHeaders
+import opstopus.deploptopus.github.events.DeploymentEventPayload
 import opstopus.deploptopus.github.events.EventType
 import opstopus.deploptopus.system.runner.Runner
 
@@ -86,13 +88,28 @@ internal fun Routing.registerWebhookEndpoint(config: Config) {
             )
             throw e
         }
-        val triggersToRun = config.triggers.filter { it.on == eventType }
+
+        // Decode the payload into the appropriate type
+        val payload = when (eventType) {
+            EventType.DEPLOYMENT -> Json.decodeFromString<DeploymentEventPayload>(requestBody)
+            else -> throw NotFound("Unsupported event type $eventName")
+        }
+        val eventRepository = payload.repository.fullName
+
+        val triggersToRun = config.triggers.filter {
+            // Only run triggers for the incoming event on the incoming repository
+            it.on.event == eventType && it.on.repository.lowercase() == eventRepository.lowercase()
+        }
+
+        // Execute runners
         val outputs = triggersToRun.map {
             Crypto.verifySignature(
                 requestBody,
                 config.githubSecret,
-                this.call.request.header("X-Hub-Signature-256") ?: ""
+                this.call.request.header("X-Hub-Signature-256")
+                    ?: throw BadRequest("No signature on request.")
             )
+            this.application.log.info("Running $eventName trigger for $eventRepository.")
             Runner.runRemote(
                 it.user,
                 it.host,
@@ -101,6 +118,8 @@ internal fun Routing.registerWebhookEndpoint(config: Config) {
                 it.command
             )
         }
+
+        // Respond to the call with outputs from all the runners
         this.call.respond(
             EventResponse(
                 triggersToRun.zip(outputs).map {
