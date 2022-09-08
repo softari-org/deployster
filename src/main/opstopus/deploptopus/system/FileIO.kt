@@ -48,6 +48,14 @@ private object FileDestructor {
     }
 
     /**
+     * Removes a file from the registry such that it will not be closed on next update.
+     */
+    fun unRegister(file: FileIO): Boolean {
+        this.log.debug("Removing file ${file.file} from registry.")
+        return this.registry.removeAll { it.first.get() === file }
+    }
+
+    /**
      * Close any files associated with dead references
      */
     fun clean() {
@@ -110,6 +118,11 @@ class FileIO(
                 } while (line != null)
             }
         }
+    }
+
+    fun close(): Int {
+        FileDestructor.unRegister(this)
+        return this.closeWith(this.file)
     }
 
     companion object {
