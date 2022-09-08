@@ -16,19 +16,31 @@ repositories {
 }
 
 kotlin {
-    val hostOs = System.getProperty("os.name")
-    val isMingwX64 = hostOs.startsWith("Windows")
-    val nativeTarget = when {
-        hostOs == "Mac OS X" -> macosX64("native")
-        hostOs == "Linux" -> linuxX64("native")
-        isMingwX64 -> mingwX64("native")
+    val nativeTarget = when (System.getProperty("os.name")) {
+        "Linux" -> linuxX64("native")
         else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
     }
 
     nativeTarget.apply {
+        compilations.getByName("main") {
+            cinterops {
+                val openssl by creating {
+                    defFile(project.file("src/cinterop/openssl.def"))
+                }
+            }
+        }
+
         binaries {
             executable {
-                entryPoint = "opstopus.deploptopus.main"
+                // Use system C libraries
+                val sysRoot = "/"
+                val libGcc = "/lib/gcc/x86_64-pc-linux-gnu/12.1.1"
+                val overriddenProperties =
+                    "targetSysRoot.linux_x64=$sysRoot;libGcc.linux_x64=$libGcc"
+                val compilerArgs = "-Xoverride-konan-properties=$overriddenProperties"
+                this.freeCompilerArgs += listOf(compilerArgs)
+                this.entryPoint = "opstopus.deploptopus.main"
+                this@binaries.findTest("debug")?.let { it.freeCompilerArgs += listOf(compilerArgs) }
             }
         }
     }
@@ -52,7 +64,6 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
-                implementation("io.ktor:ktor-client-json-tests:1.6.2")
             }
         }
     }

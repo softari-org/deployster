@@ -1,0 +1,10 @@
+headers = openssl/ssl.h openssl/crypto.h openssl/err.h openssl/hmac.h openssl/evp.h
+headerFilter = openssl/*
+
+compilerOpts.linux = -I/usr/include
+linkerOpts.linux = -L/usr/lib -lpthread -lssl -lcrypto
+
+---
+static inline void opensslFree(void *addr) {
+    CRYPTO_free(addr, OPENSSL_FILE, OPENSSL_LINE);
+}
