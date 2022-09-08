@@ -2,6 +2,7 @@ POST localhost:8080
 Content-Type: application/json
 Accept: application/json
 X-GitHub-Event: package
+X-Hub-Signature-256: sha256={{packageEventSignature}}
 
 {
   "action": "published",
