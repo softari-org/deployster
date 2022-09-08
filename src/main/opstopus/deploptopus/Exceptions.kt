@@ -14,6 +14,11 @@ sealed class HttpException(override val message: String, val status: HttpStatusC
 class BadRequest(message: String) : HttpException(message, HttpStatusCode.BadRequest)
 
 /**
+ * HTTP 403 Forbidden
+ */
+class Forbidden(message: String) : HttpException(message, HttpStatusCode.Forbidden)
+
+/**
  * HTTP 404 Not found
  */
 class NotFound(message: String) : HttpException(message, HttpStatusCode.NotFound)
