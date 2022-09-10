@@ -2,10 +2,8 @@ package opstopus.deploptopus.github
 
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.cinterop.ByteVar
-import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.UByteVar
 import kotlinx.cinterop.UIntVar
-import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.convert
@@ -37,14 +35,15 @@ object Crypto {
      * Fetch the most recent error message from OpenSSL
      */
     private fun getErrorMessage(): String {
-        ByteArray(Crypto.OPENSSL_ERROR_MESSAGE_LENGTH).usePinned {
+        memScoped {
+            val errorBuf = this.allocArray<ByteVar>(Crypto.OPENSSL_ERROR_MESSAGE_LENGTH)
             // Use OpenSSL's error stack to fetch the error message
             ERR_error_string_n(
                 ERR_get_error(),
-                it.addressOf(0),
+                errorBuf,
                 Crypto.OPENSSL_ERROR_MESSAGE_LENGTH.convert()
             )
-            return it.get().toKString()
+            return errorBuf.toKString()
         }
     }
 
@@ -83,22 +82,16 @@ object Crypto {
                 )
             }
 
-            var hexSignatureRaw: CPointer<ByteVar>? = null
-            val hexSignature: String
-            try {
-                // Encode the signature as hexadecimal
-                hexSignatureRaw = OPENSSL_buf2hexstr(
-                    signatureBuf.getPointer(this),
-                    computedLength.value.toLong()
-                )
-                hexSignature = hexSignatureRaw?.toKString()
-                    ?: throw InternalServerError("Could not hex encode signature")
-            } finally {
-                // Free the memory allocated by OpenSSL
-                hexSignatureRaw?.let {
-                    opensslFree(it.getPointer(this))
-                }
-            }
+            // Encode the signature as hexadecimal
+            val hexSignature = OPENSSL_buf2hexstr(
+                signatureBuf.getPointer(this),
+                computedLength.value.toLong()
+            )?.let {
+                // Convert to String and free allocated buffer
+                val out = it.toKString()
+                opensslFree(it)
+                return@let out
+            } ?: throw InternalServerError("Could not hex encode signature")
 
             return "sha256=${hexSignature.lowercase().filterNot { it == ':' }}"
         }
