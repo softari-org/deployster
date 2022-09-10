@@ -39,6 +39,12 @@ object ContentTypeSerializer : KSerializer<ContentType> {
     }
 
     override fun deserialize(decoder: Decoder): ContentType {
-        return ContentType.parse(decoder.decodeString())
+        var decoded = decoder.decodeString()
+        if (decoded == "json") {
+            decoded = "application/json"
+        } else if (decoded == "form") {
+            decoded = "multipart/form-data"
+        }
+        return ContentType.parse(decoded)
     }
 }
