@@ -17,7 +17,7 @@ import kotlin.system.exitProcess
 @Serializable
 data class RepositoryEvent(
     val event: EventType,
-    val repository: String
+    val repository: String? = null
 )
 
 /**
