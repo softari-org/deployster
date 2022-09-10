@@ -98,7 +98,10 @@ internal fun Routing.registerWebhookEndpoint(config: Config) {
 
         val triggersToRun = config.triggers.filter {
             // Only run triggers for the incoming event on the incoming repository
-            it.on.event == eventType && it.on.repository.lowercase() == eventRepository.lowercase()
+            it.on.event == eventType && (
+                it.on.repository?.lowercase() == eventRepository?.lowercase() ||
+                    it.on.repository == null
+                )
         }
 
         // Verify that incoming request is signed with our secret

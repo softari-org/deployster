@@ -42,6 +42,24 @@ data class SenderPayload(
 )
 
 @Serializable
+data class LicensePayload(
+    val key: String,
+    val name: String,
+    @SerialName("spdx_id") val spdxID: String,
+    val url: SerializableURL,
+    @SerialName("node_id") val nodeID: String
+)
+
+@Serializable
+enum class RepositoryVisibility {
+    @SerialName("public")
+    PUBLIC,
+
+    @SerialName("private")
+    PRIVATE;
+}
+
+@Serializable
 data class RepositoryPayload(
     val id: UInt,
     @SerialName("node_id") val nodeID: String,
@@ -111,7 +129,12 @@ data class RepositoryPayload(
     val archived: Boolean,
     val disabled: Boolean,
     @SerialName("open_issues_count") val openIssuesCount: UInt,
-    val license: String?,
+    val license: LicensePayload?,
+    @SerialName("allow_forking") val allowForking: Boolean,
+    @SerialName("is_template") val isTemplate: Boolean,
+    val topics: List<String>,
+    val visibility: RepositoryVisibility,
+    @SerialName("web_commit_signoff_required") val webCommitSignoffRequired: Boolean,
     val forks: UInt,
     @SerialName("open_issues") val openIssues: UInt,
     val watchers: UInt,
@@ -171,10 +194,11 @@ data class InstallationPayload(
 )
 
 @Serializable
-data class ConfigPayload(
+data class WebhookConfigPayload(
     @SerialName("content_type") val contentType: SerializableContentType,
     val url: SerializableURL,
-    @SerialName("insecure_ssl") val insecureSSL: String
+    @SerialName("insecure_ssl") val insecureSSL: String,
+    val secret: String?
 )
 
 @Serializable
@@ -191,12 +215,13 @@ data class HookPayload(
     val name: String,
     val active: Boolean,
     val events: List<String>,
-    val config: ConfigPayload,
+    val config: WebhookConfigPayload,
     @SerialName("updated_at") val updatedAt: Instant,
     @SerialName("created_at") val createdAt: Instant,
     val url: SerializableURL,
     @SerialName("test_url") val testURL: SerializableURL,
     @SerialName("ping_url") val pingURL: SerializableURL,
+    @SerialName("deliveries_url") val deliveriesURL: SerializableURL,
     @SerialName("last_response") val lastResponse: HookResponsePayload
 )
 
@@ -337,7 +362,7 @@ data class PingEventPayload(
     val hook: HookPayload,
     override val repository: RepositoryPayload,
     override val sender: SenderPayload,
-    override val organization: OrganizationPayload?,
+    override val organization: OrganizationPayload? = null,
     override val action: String? = null,
     override val installation: InstallationPayload? = null
 ) : EventPayload()
