@@ -102,7 +102,7 @@ internal fun Routing.registerWebhookEndpoint(config: Config) {
         }
 
         // Verify that incoming request is signed with our secret
-        if (!Crypto.verifySignature(
+        if (!Crypto.signatureIsValid(
                 requestBody,
                 config.githubSecret,
                 this.call.request.header(GitHubHeaders.HUB_SIGNATURE_SHA_256.headerText)

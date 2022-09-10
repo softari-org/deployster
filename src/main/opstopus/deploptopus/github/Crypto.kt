@@ -99,7 +99,7 @@ object Crypto {
     /**
      * Verify the signature of an incoming request.
      */
-    fun verifySignature(body: String, secret: String, signature: String?): Boolean {
+    fun signatureIsValid(body: String, secret: String, signature: String?): Boolean {
         // Buffer to store the content of the output signature
         val computedSignature = this.computeSignature(body, secret)
 
