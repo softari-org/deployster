@@ -21,7 +21,6 @@ import openssl.HMAC
 import openssl.OPENSSL_buf2hexstr
 import openssl.SHA256_DIGEST_LENGTH
 import openssl.opensslFree
-import opstopus.deploptopus.Forbidden
 import opstopus.deploptopus.InternalServerError
 
 object Crypto {
@@ -99,10 +98,8 @@ object Crypto {
 
     /**
      * Verify the signature of an incoming request.
-     *
-     * @throws Forbidden if the signature is not correct
      */
-    fun verifySignature(body: String, secret: String, signature: String) {
+    fun verifySignature(body: String, secret: String, signature: String?): Boolean {
         // Buffer to store the content of the output signature
         val computedSignature = this.computeSignature(body, secret)
 
@@ -112,7 +109,8 @@ object Crypto {
             this.log.debug(
                 "Computed signature $computedSignature does not match provided signature $signature"
             )
-            throw Forbidden("Request failed signature check")
+            return false
         }
+        return true
     }
 }

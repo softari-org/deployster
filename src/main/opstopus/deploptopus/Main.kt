@@ -101,16 +101,21 @@ internal fun Routing.registerWebhookEndpoint(config: Config) {
             it.on.event == eventType && it.on.repository.lowercase() == eventRepository.lowercase()
         }
 
-        // Execute runners
-        val outputs = triggersToRun.map {
-            Crypto.verifySignature(
+        // Verify that incoming request is signed with our secret
+        if (!Crypto.verifySignature(
                 requestBody,
                 config.githubSecret,
-                this.call.request.header("X-Hub-Signature-256")
-                    ?: throw BadRequest("No signature on request.")
+                this.call.request.header(GitHubHeaders.HUB_SIGNATURE_SHA_256.headerText)
             )
+        ) {
+            // TODO update deployment status to error
+            throw Forbidden("Request signature validation failed.")
+        }
+
+        // Execute runners
+        val outputs = triggersToRun.map {
             this.application.log.info("Running $eventName trigger for $eventRepository.")
-            Runner.runRemote(
+            return@map Runner.runRemote(
                 it.user,
                 it.host,
                 it.port,
