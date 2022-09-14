@@ -13,6 +13,6 @@ class CryptoTest {
         val actualSignature =
             "sha256=04c366ed28f695a1f3477765f3c98073d2fc62a0192e0811d1cda57295dcec6e"
 
-        assertEquals(actualSignature, Crypto.computeSignature(payload, secret))
+        assertEquals(actualSignature, Crypto.signHMACSHA256(payload, secret))
     }
 }

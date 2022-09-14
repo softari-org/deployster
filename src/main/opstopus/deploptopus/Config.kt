@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import opstopus.deploptopus.github.events.EventType
 import opstopus.deploptopus.system.FileIO
 import opstopus.deploptopus.system.FileIOException
 import platform.posix.F_OK
@@ -15,10 +14,7 @@ import platform.posix.getenv
 import kotlin.system.exitProcess
 
 @Serializable
-data class RepositoryEvent(
-    val event: EventType,
-    val repository: String? = null
-)
+data class RepositoryEvent(val repository: String)
 
 /**
  * Represents a single trigger

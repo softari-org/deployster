@@ -3,6 +3,16 @@ package opstopus.deploptopus
 import io.ktor.http.HttpStatusCode
 
 /**
+ * Exception for a required secret which was not provided
+ */
+class MissingSecretException(override val message: String? = null) : Exception()
+
+/**
+ * Exception for errors occurring with C memory allocation
+ */
+class MemoryAllocationException : Exception()
+
+/**
  * Base exception for any exceptions which directly match to HTTP errors
  */
 sealed class HttpException(override val message: String, val status: HttpStatusCode) :

@@ -1,4 +1,4 @@
-headers = openssl/ssl.h openssl/crypto.h openssl/err.h openssl/hmac.h openssl/evp.h
+headers = openssl/ssl.h openssl/crypto.h openssl/err.h openssl/hmac.h openssl/evp.h openssl/rsa.h openssl/pem.h
 headerFilter = openssl/*
 
 compilerOpts.linux = -I/usr/include

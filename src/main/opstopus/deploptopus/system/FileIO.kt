@@ -1,83 +1,22 @@
 package opstopus.deploptopus.system
 
-import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.CPointer
 import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.allocArray
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.sizeOf
-import kotlinx.cinterop.staticCFunction
 import kotlinx.cinterop.toKString
 import platform.posix.FILE
-import platform.posix.SIGINT
-import platform.posix.atexit
+import platform.posix.SEEK_END
 import platform.posix.fclose
 import platform.posix.fgets
 import platform.posix.fopen
-import platform.posix.signal
-import kotlin.native.concurrent.AtomicReference
-import kotlin.native.concurrent.freeze
-import kotlin.native.ref.WeakReference
-
-/**
- * Tracks references to FileIO objects, and closes any open file pointers as their
- * containers are destroyed
- */
-private object FileDestructor {
-    private val atom = AtomicReference(
-        mutableListOf<Triple<WeakReference<FileIO>, ((CValuesRef<FILE>) -> Int), CPointer<FILE>>>().freeze()
-    )
-    private val registry
-        get() = this.atom.value
-    private val log = KtorSimpleLogger("FileDestructor")
-
-    /**
-     * Register exit deconstructors
-     */
-    init {
-        atexit(staticCFunction<Unit> { FileDestructor.destroy() })
-        signal(SIGINT, staticCFunction<Int, Unit> { FileDestructor.destroy() })
-    }
-
-    /**
-     * Track the lifetime of a FileIO object and close it's file when it is collected
-     */
-    fun register(file: FileIO) {
-        this.registry.add(Triple(WeakReference(file), file.closeWith, file.file))
-    }
-
-    /**
-     * Removes a file from the registry such that it will not be closed on next update.
-     */
-    fun unRegister(file: FileIO): Boolean {
-        this.log.debug("Removing file ${file.file} from registry.")
-        return this.registry.removeAll { it.first.get() === file }
-    }
-
-    /**
-     * Close any files associated with dead references
-     */
-    fun clean() {
-        val destroyed = this.registry.filter { it.first.get() == null }
-        destroyed.forEach {
-            this.log.debug("Closing file ${it.third.rawValue}")
-            it.second(it.third)
-        }
-        this.registry.removeAll(destroyed)
-    }
-
-    /**
-     * Close all files, regardless of the state of their reference
-     */
-    fun destroy() {
-        this.log.debug("Destroying files")
-        this.registry.forEach {
-            this.log.debug("Closing file ${it.third.rawValue}")
-            it.second(it.third)
-        }
-    }
-}
+import platform.posix.fseek
+import platform.posix.ftell
+import platform.posix.rewind
+import kotlin.native.internal.Cleaner
+import kotlin.native.internal.createCleaner
 
 /**
  * Any exceptions related to POSIX FileIO
@@ -88,20 +27,42 @@ class FileIOException(override val message: String?, override val cause: Throwab
 }
 
 /**
- * Lifecycle manager for POSIX file pointers
+ * GlobalLifecycle manager for POSIX file pointers
  */
 class FileIO(
-    internal val file: CPointer<FILE>,
-    internal val closeWith: (CValuesRef<FILE>) -> Int = { fclose(it) }
+    val file: CPointer<FILE>,
+    private val closeWith: (CValuesRef<FILE>) -> Int = { fclose(it) }
 ) {
+
+    val length: Long = -1L
+        get() {
+            if (field >= 0) {
+                return field
+            }
+
+            rewind(this.file)
+            if (fseek(this.file, 0L, SEEK_END) < 0) {
+                throw FileIOException("Failed to read file length.")
+            }
+
+            val len = ftell(this.file)
+            if (len < 0) {
+                throw FileIOException("Failed to read file length.")
+            }
+
+            rewind(this.file)
+
+            return len
+        }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    private var cleaner: Cleaner? =
+        createCleaner(this.file) { if (!this.closed) this.closeWith(it) }
+    private var closed = false
+
     constructor(path: String, mode: String = "r") : this(
         fopen(path, mode) ?: throw FileIOException("Failed to open file at $path")
     )
-
-    init {
-        FileDestructor.register(this)
-        FileDestructor.clean()
-    }
 
     fun read(): String {
         return buildString {
@@ -121,8 +82,10 @@ class FileIO(
     }
 
     fun close(): Int {
-        FileDestructor.unRegister(this)
-        return this.closeWith(this.file)
+        val code = this.closeWith(this.file)
+        this.closed = true
+        this.cleaner = null
+        return code
     }
 
     companion object {

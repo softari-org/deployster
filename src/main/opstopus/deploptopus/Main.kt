@@ -23,9 +23,11 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import opstopus.deploptopus.github.Crypto
 import opstopus.deploptopus.github.GitHubHeaders
+import opstopus.deploptopus.github.deploy.DeploymentState
+import opstopus.deploptopus.github.deploy.DeploymentStatus
 import opstopus.deploptopus.github.events.DeploymentEventPayload
-import opstopus.deploptopus.github.events.EventType
 import opstopus.deploptopus.system.runner.Runner
+import platform.posix.EXIT_SUCCESS
 
 internal fun Application.registerSerializers() {
     this.install(ContentNegotiation) {
@@ -62,46 +64,30 @@ internal fun Routing.registerStatusEndpoint() {
 
 internal fun Routing.registerWebhookEndpoint(config: Config) {
     post("/") {
-        val eventName = this.call.request.header(
-            GitHubHeaders.EVENT_TYPE.headerText
-        )
+        val eventName = this.call.request.header(GitHubHeaders.EVENT_TYPE.headerText)
         // If an event name is not provided, it's an invalid request
         if (eventName.isNullOrEmpty()) {
-            throw BadRequest(
-                "Header ${GitHubHeaders.EVENT_TYPE.headerText} required."
-            )
+            throw BadRequest("Header ${GitHubHeaders.EVENT_TYPE.headerText} required.")
         }
 
-        /*
-         * We get the type of the request from the event name header.
-         * With that, we can fetch the corresponding data class which the
-         * request payload will fit into, and then de-serialize the request.
-         */
-        val eventType: EventType
         val requestBody = this.call.receiveText()
-        try {
-            eventType = EventType[eventName]
-            this.application.log.debug("Received payload $requestBody")
-        } catch (e: NotFound) {
-            this.call.application.log.error(
-                "Received an unsupported webhook event"
-            )
-            throw e
-        }
 
         // Decode the payload into the appropriate type
-        val payload = when (eventType) {
-            EventType.DEPLOYMENT -> Json.decodeFromString<DeploymentEventPayload>(requestBody)
-            else -> throw NotFound("Unsupported event type $eventName")
+        val payload = try {
+            Json.decodeFromString<DeploymentEventPayload>(requestBody)
+        } catch (e: Exception) {
+            throw BadRequest("Unsupported event")
         }
+
         val eventRepository = payload.repository.fullName
+        val installation = payload.installation ?: throw BadRequest("No installation provided")
+        val deploymentStatus = DeploymentStatus(installation)
+
+        deploymentStatus.update(payload.deployment, DeploymentState.PENDING)
 
         val triggersToRun = config.triggers.filter {
             // Only run triggers for the incoming event on the incoming repository
-            it.on.event == eventType && (
-                it.on.repository?.lowercase() == eventRepository?.lowercase() ||
-                    it.on.repository == null
-                )
+            it.on.repository.lowercase() == eventRepository.lowercase()
         }
 
         // Verify that incoming request is signed with our secret
@@ -111,7 +97,7 @@ internal fun Routing.registerWebhookEndpoint(config: Config) {
                 this.call.request.header(GitHubHeaders.HUB_SIGNATURE_SHA_256.headerText)
             )
         ) {
-            // TODO update deployment status to error
+            deploymentStatus.update(payload.deployment, DeploymentState.ERROR)
             throw Forbidden("Request signature validation failed.")
         }
 
@@ -127,14 +113,14 @@ internal fun Routing.registerWebhookEndpoint(config: Config) {
             )
         }
 
+        if (outputs.all { it.status == EXIT_SUCCESS }) {
+            deploymentStatus.update(payload.deployment, DeploymentState.SUCCESS)
+        } else {
+            deploymentStatus.update(payload.deployment, DeploymentState.FAILURE)
+        }
+
         // Respond to the call with outputs from all the runners
-        this.call.respond(
-            EventResponse(
-                triggersToRun.zip(outputs).map {
-                    RunnerIO(it.first, it.second)
-                }
-            )
-        )
+        this.call.respond(EventResponse(outputs))
     }
 }
 
@@ -149,6 +135,7 @@ internal fun runServer(config: Config) {
             this.registerWebhookEndpoint(config)
         }
     }.start(wait = true)
+    GlobalLifecycle.end()
 }
 
 fun main(args: Array<String>) {

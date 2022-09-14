@@ -2,12 +2,14 @@ package opstopus.deploptopus.github.events
 
 import io.ktor.http.ContentType
 import io.ktor.http.Url
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import opstopus.deploptopus.ContentTypeSerializer
 import opstopus.deploptopus.URLSerializer
+import kotlin.time.Duration.Companion.seconds
 
 typealias SerializableURL = (
     @Serializable(with = URLSerializer::class)
@@ -168,9 +170,39 @@ data class OrganizationPayload(
 
 @Serializable
 data class PermissionsPayload(
-    val metadata: String,
-    val contents: String,
-    val issues: String
+    val metadata: String? = null,
+    val issues: String? = null,
+    val discussions: String? = null,
+    val actions: String? = null,
+    val administration: String? = null,
+    val checks: String? = null,
+    val contents: String? = null,
+    val deployments: String? = null,
+    val environments: String? = null,
+    val packages: String? = null,
+    val pages: String? = null,
+    @SerialName("pull_requests") val pullRequests: String? = null,
+    @SerialName("merge_queues") val mergeQueues: String? = null,
+    @SerialName("repository_hooks") val repositoryHooks: String? = null,
+    @SerialName("repository_projects") val repositoryProjects: String? = null,
+    @SerialName("secret_scanning_alerts") val secretScanningAlerts: String? = null,
+    val secrets: String? = null,
+    @SerialName("security_events") val securityEvents: String? = null,
+    @SerialName("single_file") val singleFile: String? = null,
+    val statuses: String? = null,
+    @SerialName("vulnerability_alerts") val vulnerabilityAlerts: String? = null,
+    val workflows: String? = null,
+    val members: String? = null,
+    @SerialName("organization_administration") val organizationAdministration: String? = null,
+    @SerialName("organization_custom_roles") val organizationCustomRoles: String? = null,
+    @SerialName("organization_hooks") val organizationHooks: String? = null,
+    @SerialName("organization_plan") val organizationPlan: String? = null,
+    @SerialName("organization_projects") val organizationProjects: String? = null,
+    @SerialName("organization_packages") val organizationPackages: String? = null,
+    @SerialName("organization_secrets") val organizationSecrets: String? = null,
+    @SerialName("organization_self_hosted_runners") val organizationSelfHostedRunners: String? = null,
+    @SerialName("organization_user_blocking") val organizationUserBlocking: String? = null,
+    @SerialName("team_discussions") val teamDiscussions: String? = null
 )
 
 @Serializable
@@ -188,9 +220,15 @@ data class InstallationPayload(
     val events: List<String>,
     @SerialName("created_at") val createdAt: Instant,
     @SerialName("updated_at") val updatedAt: Instant,
-    @SerialName("single_file_name") val singleFileName: String,
-    val repositories: List<PartialRepositoryPayload>,
-    val sender: SenderPayload
+    @SerialName("single_file_name") val singleFileName: String?,
+    @SerialName("app_slug") val appSlug: String,
+    @SerialName("suspended_by") val suspendedBy: SenderPayload?,
+    @SerialName("suspended_at") val suspendedAt: Instant?,
+    @SerialName("contact_email") val contactEmail: String? = null,
+    val repositories: List<PartialRepositoryPayload>? = null,
+    val sender: SenderPayload? = null,
+    @SerialName("has_multiple_single_files") val hasMultipleFiles: Boolean? = null,
+    @SerialName("single_file_paths") val singleFilePaths: List<String>? = null
 )
 
 @Serializable
@@ -379,3 +417,28 @@ data class DeploymentEventPayload(
     override val organization: OrganizationPayload? = null,
     override val installation: InstallationPayload? = null
 ) : EventPayload()
+
+/**
+ * Represents the body of a response for a GitHub access token
+ */
+@Serializable
+data class GitHubAccessTokenPayload(
+    val token: String,
+    @SerialName("expires_at") val expiresAt: Instant,
+    val permissions: PermissionsPayload,
+    @SerialName("repository_selection") val repositorySelection: String,
+    val repositories: List<RepositoryPayload>
+) {
+    fun isExpired(): Boolean = this.expiresAt >= Clock.System.now() - 60.seconds
+}
+
+/**
+ * Represents the body of a request for a GitHub access token
+ */
+@Serializable
+data class GitHubAccessTokenRequestPayload(
+    val repository: String? = null,
+    val repositories: List<String>? = null,
+    @SerialName("repository_ids") val repositoryIDs: List<UInt>? = null,
+    val permissions: PermissionsPayload? = null
+)
