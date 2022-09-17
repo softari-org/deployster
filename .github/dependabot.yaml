@@ -13,3 +13,18 @@ updates:
       day: saturday
       time: "08:00"
       timezone: "America/Chicago"
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "08:00"
+      timezone: "America/Chicago"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "08:00"
+      timezone: "America/Chicago"
+
