@@ -1,8 +1,8 @@
 headers = openssl/ssl.h openssl/crypto.h openssl/err.h openssl/hmac.h openssl/evp.h openssl/rsa.h openssl/pem.h
 headerFilter = openssl/*
 
-compilerOpts.linux = -I/usr/include
-linkerOpts.linux = -L/usr/lib -lpthread -lssl -lcrypto
+compilerOpts.linux = -I/usr/include -I/usr/include/x86_64-linux-gnu
+linkerOpts.linux = -L /usr/lib -L/usr/lib/x86_64-linux-gnu -lpthread -lssl -lcrypto
 
 ---
 static inline void opensslFree(void *addr) {

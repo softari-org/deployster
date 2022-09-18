@@ -34,9 +34,12 @@ kotlin {
             executable {
                 // Use system C libraries
                 val sysRoot = "/"
-                val libGcc = "/lib/gcc/x86_64-pc-linux-gnu/12.1.1"
+                val libgccRoot = File("/lib/gcc/x86_64-linux-gnu/").takeIf { it.exists() }
+                    ?: File("/lib/gcc/x86_64-pc-linux-gnu/")
+                // Use the most recent GCC available on the host
+                val libgccPath = file("${libgccRoot.absolutePath}/${libgccRoot.list()!!.last()}")
                 val overriddenProperties =
-                    "targetSysRoot.linux_x64=$sysRoot;libGcc.linux_x64=$libGcc"
+                    "targetSysRoot.linux_x64=$sysRoot;libGcc.linux_x64=$libgccPath"
                 val compilerArgs = "-Xoverride-konan-properties=$overriddenProperties"
                 this.freeCompilerArgs += listOf(compilerArgs)
                 this.entryPoint = "opstopus.deploptopus.main"
