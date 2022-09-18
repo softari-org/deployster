@@ -11,10 +11,16 @@ on:
       - "gradle.properties"
       - "gradle/**"
       - "default.config.json"
+      - ".github/docker.yaml"
   pull_request:
     paths:
       - "docker/**"
-      - "**.def"
+      - "src/**"
+      - "*.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - "default.config.json"
+      - ".github/docker.yaml"
   schedule:
     - cron: '0 12 * * 6'
 
