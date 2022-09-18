@@ -34,7 +34,13 @@ jobs:
       # The Kotlin native compiler refuses to look for these object files in the right location
       - name: Copy crt objects
         run: sudo cp /usr/lib/x86_64-linux-gnu/crt* /usr/lib/
+      - name: Store private key
+        env:
+          SECRET_KEY: {{secrets.SECRET_PEM_KEYFILE}}
+        run: echo $SECRET_KEY > github_private_key.pem
       - name: Build with Gradle
         uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+        env:
+          GITHUB_API_PRIVATE_PEM_KEYFILE: github_private_key.pem
         with:
-          arguments: build
+          arguments: build --info
