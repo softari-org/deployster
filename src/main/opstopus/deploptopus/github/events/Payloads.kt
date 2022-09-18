@@ -1,24 +1,17 @@
 package opstopus.deploptopus.github.events
 
-import io.ktor.http.ContentType
 import io.ktor.http.Url
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
-import opstopus.deploptopus.ContentTypeSerializer
 import opstopus.deploptopus.URLSerializer
 import kotlin.time.Duration.Companion.seconds
 
 typealias SerializableURL = (
     @Serializable(with = URLSerializer::class)
     Url
-)
-
-typealias SerializableContentType = (
-    @Serializable(with = ContentTypeSerializer::class)
-    ContentType
 )
 
 @Serializable
@@ -51,15 +44,6 @@ data class LicensePayload(
     val url: SerializableURL,
     @SerialName("node_id") val nodeID: String
 )
-
-@Serializable
-enum class RepositoryVisibility {
-    @SerialName("public")
-    PUBLIC,
-
-    @SerialName("private")
-    PRIVATE;
-}
 
 @Serializable
 data class RepositoryPayload(
@@ -135,7 +119,7 @@ data class RepositoryPayload(
     @SerialName("allow_forking") val allowForking: Boolean,
     @SerialName("is_template") val isTemplate: Boolean,
     val topics: List<String>,
-    val visibility: RepositoryVisibility,
+    val visibility: String,
     @SerialName("web_commit_signoff_required") val webCommitSignoffRequired: Boolean,
     val forks: UInt,
     @SerialName("open_issues") val openIssues: UInt,
@@ -232,38 +216,6 @@ data class InstallationPayload(
     @SerialName("single_file_paths") val singleFilePaths: List<String>? = null
 )
 
-@Serializable
-data class WebhookConfigPayload(
-    @SerialName("content_type") val contentType: SerializableContentType,
-    val url: SerializableURL,
-    @SerialName("insecure_ssl") val insecureSSL: String,
-    val secret: String?
-)
-
-@Serializable
-data class HookResponsePayload(
-    val code: UInt?,
-    val status: String,
-    val message: String?
-)
-
-@Serializable
-data class HookPayload(
-    val type: String,
-    val id: UInt,
-    val name: String,
-    val active: Boolean,
-    val events: List<String>,
-    val config: WebhookConfigPayload,
-    @SerialName("updated_at") val updatedAt: Instant,
-    @SerialName("created_at") val createdAt: Instant,
-    val url: SerializableURL,
-    @SerialName("test_url") val testURL: SerializableURL,
-    @SerialName("ping_url") val pingURL: SerializableURL,
-    @SerialName("deliveries_url") val deliveriesURL: SerializableURL,
-    @SerialName("last_response") val lastResponse: HookResponsePayload
-)
-
 /**
  * Represents the common properties shared by every event payload. All event payload
  * data classes must implement this class.
@@ -276,88 +228,6 @@ sealed class EventPayload {
     abstract val organization: OrganizationPayload?
     abstract val installation: InstallationPayload?
 }
-
-@Serializable
-data class FilePayload(
-    @SerialName("download_url") val downloadURL: SerializableURL,
-    val id: UInt,
-    val name: String,
-    val sha256: String,
-    val sha1: String,
-    val md5: String,
-    @SerialName("content_type") val contentType: SerializableContentType,
-    val state: String,
-    val size: UInt,
-    @SerialName("created_at") val createdAt: Instant,
-    @SerialName("updated_at") val updatedAt: Instant
-)
-
-@Serializable
-data class ReleasePayload(
-    val url: SerializableURL,
-    @SerialName("html_url") val htmlUrl: SerializableURL,
-    val id: UInt,
-    @SerialName("tag_name") val tagName: String,
-    @SerialName("target_commitish") val targetCommitish: String,
-    val name: String,
-    val draft: Boolean,
-    val author: SenderPayload,
-    val prerelease: Boolean,
-    @SerialName("created_at") val createdAt: Instant,
-    @SerialName("published_at") val publishedAt: Instant
-)
-
-@Serializable
-data class PackageVersionPayload(
-    val id: UInt,
-    val version: String,
-    val summary: String,
-    val name: String,
-    val description: String?,
-    val body: String,
-    @SerialName("body_html") val bodyHTML: String,
-    val release: ReleasePayload,
-    val manifest: String,
-    @SerialName("html_url") val htmlURL: SerializableURL,
-    @SerialName("tag_name") val tagName: String,
-    @SerialName("target_commitish") val targetCommitish: String,
-    @SerialName("target_oid") val targetOID: String,
-    val draft: Boolean,
-    val prerelease: Boolean,
-    @SerialName("created_at") val createdAt: Instant,
-    @SerialName("updated_at") val updatedAt: Instant,
-    val metadata: List<String>,
-    @SerialName("docker_metadata") val dockerMetadata: List<String>,
-    @SerialName("package_files") val packageFiles: List<FilePayload>,
-    val author: SenderPayload,
-    @SerialName("source_url") val sourceURL: SerializableURL,
-    @SerialName("installation_command") val installationCommand: String
-)
-
-@Serializable
-data class PackageRegistryPayload(
-    @SerialName("about_url") val aboutURL: SerializableURL,
-    val name: String,
-    val type: String,
-    val url: SerializableURL,
-    val vendor: String
-)
-
-@Serializable
-data class PackagePayload(
-    val id: UInt,
-    val name: String,
-    val namespace: String,
-    val description: String?,
-    val ecosystem: String,
-    @SerialName("package_type") val packageType: String,
-    @SerialName("html_url") val htmlURL: SerializableURL,
-    @SerialName("created_at") val createdAt: Instant,
-    @SerialName("updated_at") val updatedAt: Instant,
-    val owner: SenderPayload,
-    @SerialName("package_version") val packageVersion: PackageVersionPayload,
-    val registry: PackageRegistryPayload
-)
 
 @Serializable
 data class DeploymentPayload(
@@ -376,35 +246,6 @@ data class DeploymentPayload(
     @SerialName("statuses_url") val statusesURL: SerializableURL,
     @SerialName("repository_url") val repositoryURL: SerializableURL
 )
-
-/**
- * Represents the body of a package event payload
- * https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#package
- */
-@Serializable
-data class PackageEventPayload(
-    override val action: String,
-    override val sender: SenderPayload,
-    override val repository: RepositoryPayload,
-    @SerialName("package") val pkg: PackagePayload,
-    override val organization: OrganizationPayload? = null,
-    override val installation: InstallationPayload? = null
-) : EventPayload()
-
-/**
- * Represents the body of a ping event payload
- */
-@Serializable
-data class PingEventPayload(
-    val zen: String,
-    @SerialName("hook_id") val hookID: UInt,
-    val hook: HookPayload,
-    override val repository: RepositoryPayload,
-    override val sender: SenderPayload,
-    override val organization: OrganizationPayload? = null,
-    override val action: String? = null,
-    override val installation: InstallationPayload? = null
-) : EventPayload()
 
 /**
  * Represents the body of a deployment event payload
