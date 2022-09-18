@@ -197,6 +197,7 @@ data class PermissionsPayload(
     @SerialName("organization_custom_roles") val organizationCustomRoles: String? = null,
     @SerialName("organization_hooks") val organizationHooks: String? = null,
     @SerialName("organization_plan") val organizationPlan: String? = null,
+    @SerialName("organization_events") val organizationEvents: String? = null,
     @SerialName("organization_projects") val organizationProjects: String? = null,
     @SerialName("organization_packages") val organizationPackages: String? = null,
     @SerialName("organization_secrets") val organizationSecrets: String? = null,
