@@ -7,13 +7,13 @@ on:
     branches: ["main"]
     paths:
       - "src/**"
-      - ".github/detekt.yaml"
+      - ".github/workflows/detekt.yaml"
       - "detekt.yml"
   pull_request:
     branches: ["main"]
     paths:
       - "src/**"
-      - ".github/detekt.yaml"
+      - ".github/workflows/detekt.yaml"
       - "detekt.yml"
   schedule:
     - cron: '0 13 * * 6'

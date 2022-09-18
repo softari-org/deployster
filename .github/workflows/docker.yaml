@@ -11,7 +11,7 @@ on:
       - "gradle.properties"
       - "gradle/**"
       - "default.config.json"
-      - ".github/docker.yaml"
+      - ".github/workflows/docker.yaml"
   pull_request:
     paths:
       - "docker/**"
@@ -20,7 +20,7 @@ on:
       - "gradle.properties"
       - "gradle/**"
       - "default.config.json"
-      - ".github/docker.yaml"
+      - ".github/workflows/docker.yaml"
   schedule:
     - cron: '0 12 * * 6'
 
