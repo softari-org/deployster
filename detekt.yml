@@ -1,1 +1,4 @@
 ---
+comments:
+  AbsentOrWrongFileLicense:
+    active: false
