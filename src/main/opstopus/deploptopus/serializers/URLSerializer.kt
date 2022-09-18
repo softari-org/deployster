@@ -1,6 +1,5 @@
-package opstopus.deploptopus
+package opstopus.deploptopus.serializers
 
-import io.ktor.http.ContentType
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 import io.ktor.http.takeFrom
@@ -23,28 +22,5 @@ object URLSerializer : KSerializer<Url> {
 
     override fun deserialize(decoder: Decoder): Url {
         return URLBuilder().takeFrom(decoder.decodeString()).build()
-    }
-}
-
-object ContentTypeSerializer : KSerializer<ContentType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
-        "ContentType",
-        PrimitiveKind.STRING
-    )
-
-    override fun serialize(encoder: Encoder, value: ContentType) {
-        encoder.encodeString(
-            "${value.contentType.lowercase()}/${value.contentSubtype.lowercase()}"
-        )
-    }
-
-    override fun deserialize(decoder: Decoder): ContentType {
-        var decoded = decoder.decodeString()
-        if (decoded == "json") {
-            decoded = "application/json"
-        } else if (decoded == "form") {
-            decoded = "multipart/form-data"
-        }
-        return ContentType.parse(decoded)
     }
 }

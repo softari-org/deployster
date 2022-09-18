@@ -5,8 +5,16 @@ on:
   # Triggers the workflow on push or pull request events but only for default and protected branches
   push:
     branches: ["main"]
+    paths:
+      - "src/**"
+      - ".github/detekt.yaml"
+      - "detekt.yml"
   pull_request:
     branches: ["main"]
+    paths:
+      - "src/**"
+      - ".github/detekt.yaml"
+      - "detekt.yml"
   schedule:
     - cron: '0 13 * * 6'
 
