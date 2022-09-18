@@ -20,7 +20,7 @@ permissions:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v3
@@ -29,6 +29,11 @@ jobs:
         with:
           java-version: '8'
           distribution: 'temurin'
+      - name: Install dependencies
+        run: apt-get update && apt-get install -y libgcc-12-dev libstdc++-12-dev libssl-dev libcurl4-openssl-dev
+      # The Kotlin native compiler refuses to look for these object files in the right location
+      - name: Copy crt objects
+        run: cp /usr/lib/x86_64-linux-gnu/crt* /usr/lib/
       - name: Build with Gradle
         uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
         with:
