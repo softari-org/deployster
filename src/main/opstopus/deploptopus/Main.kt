@@ -14,10 +14,10 @@ import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.header
 import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
-import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -29,13 +29,13 @@ import opstopus.deploptopus.github.events.DeploymentEventPayload
 import opstopus.deploptopus.system.runner.Runner
 import platform.posix.EXIT_SUCCESS
 
-internal fun Application.registerSerializers() {
+internal fun Application.serializersModule() {
     this.install(ContentNegotiation) {
         this.json()
     }
 }
 
-internal fun Application.registerExceptionHandlers() {
+internal fun Application.exceptionHandlersModule() {
     this.install(StatusPages) {
         /*
          * This is the base exception handler for otherwise unhandled exceptions.
@@ -56,84 +56,89 @@ internal fun Application.registerExceptionHandlers() {
     }
 }
 
-internal fun Routing.registerStatusEndpoint() {
-    get("/") {
-        this.call.respond(Status.get())
+internal fun Application.statusModule() {
+    routing {
+        get("/") {
+            this.call.respond(Status.get())
+        }
     }
 }
 
-internal fun Routing.registerWebhookEndpoint(config: Config) {
-    post("/") {
-        val eventName = this.call.request.header(GitHubHeaders.EVENT_TYPE.headerText)
-        // If an event name is not provided, it's an invalid request
-        if (eventName.isNullOrEmpty()) {
-            throw BadRequest("Header ${GitHubHeaders.EVENT_TYPE.headerText} required.")
+internal fun Application.webhookModule(config: Config) {
+    routing {
+        post("/") {
+            val eventName = this.call.request.header(GitHubHeaders.EVENT_TYPE.headerText)
+            // If an event name is not provided, it's an invalid request
+            if (eventName.isNullOrEmpty()) {
+                throw BadRequest("Header ${GitHubHeaders.EVENT_TYPE.headerText} required.")
+            }
+
+            val requestBody = this.call.receiveText()
+
+            // Decode the payload into the appropriate type
+            val payload = try {
+                Json.decodeFromString<DeploymentEventPayload>(requestBody)
+            } catch (e: SerializationException) {
+                this.application.log.error(e.toString())
+                throw BadRequest("Unsupported event.")
+            }
+
+            val eventRepository = payload.repository.fullName
+            val installation = payload.installation ?: throw BadRequest("No installation provided")
+            val deploymentStatus = DeploymentStatus(installation)
+
+            deploymentStatus.update(payload.deployment, DeploymentState.PENDING)
+
+            val triggersToRun = config.triggers.filter {
+                // Only run triggers for the incoming event on the incoming repository
+                it.on.repository.lowercase() == eventRepository.lowercase()
+            }
+
+            // Verify that incoming request is signed with our secret
+            if (!Crypto.signatureIsValid(
+                    requestBody,
+                    config.githubSecret,
+                    this.call.request.header(GitHubHeaders.HUB_SIGNATURE_SHA_256.headerText)
+                )
+            ) {
+                deploymentStatus.update(payload.deployment, DeploymentState.ERROR)
+                throw Forbidden("Request signature validation failed.")
+            }
+
+            // Execute runners
+            val outputs = triggersToRun.map {
+                this.application.log.info("Running $eventName trigger for $eventRepository.")
+                return@map Runner.runRemote(
+                    it.user,
+                    it.host,
+                    it.port,
+                    it.key,
+                    it.command
+                )
+            }
+
+            if (outputs.all { it.status == EXIT_SUCCESS }) {
+                deploymentStatus.update(payload.deployment, DeploymentState.SUCCESS)
+            } else {
+                deploymentStatus.update(payload.deployment, DeploymentState.FAILURE)
+            }
+
+            // Respond to the call with outputs from all the runners
+            this.call.respond(EventResponse(outputs))
         }
-
-        val requestBody = this.call.receiveText()
-
-        // Decode the payload into the appropriate type
-        val payload = try {
-            Json.decodeFromString<DeploymentEventPayload>(requestBody)
-        } catch (e: Exception) {
-            throw BadRequest("Unsupported event")
-        }
-
-        val eventRepository = payload.repository.fullName
-        val installation = payload.installation ?: throw BadRequest("No installation provided")
-        val deploymentStatus = DeploymentStatus(installation)
-
-        deploymentStatus.update(payload.deployment, DeploymentState.PENDING)
-
-        val triggersToRun = config.triggers.filter {
-            // Only run triggers for the incoming event on the incoming repository
-            it.on.repository.lowercase() == eventRepository.lowercase()
-        }
-
-        // Verify that incoming request is signed with our secret
-        if (!Crypto.signatureIsValid(
-                requestBody,
-                config.githubSecret,
-                this.call.request.header(GitHubHeaders.HUB_SIGNATURE_SHA_256.headerText)
-            )
-        ) {
-            deploymentStatus.update(payload.deployment, DeploymentState.ERROR)
-            throw Forbidden("Request signature validation failed.")
-        }
-
-        // Execute runners
-        val outputs = triggersToRun.map {
-            this.application.log.info("Running $eventName trigger for $eventRepository.")
-            return@map Runner.runRemote(
-                it.user,
-                it.host,
-                it.port,
-                it.key,
-                it.command
-            )
-        }
-
-        if (outputs.all { it.status == EXIT_SUCCESS }) {
-            deploymentStatus.update(payload.deployment, DeploymentState.SUCCESS)
-        } else {
-            deploymentStatus.update(payload.deployment, DeploymentState.FAILURE)
-        }
-
-        // Respond to the call with outputs from all the runners
-        this.call.respond(EventResponse(outputs))
     }
 }
 
 internal fun runServer(config: Config) {
     embeddedServer(CIO, host = "localhost", port = 8080) {
         this.log.debug("Running with config: ${Json.encodeToString(config)}")
-        this.registerSerializers()
-        this.registerExceptionHandlers()
+        this.serializersModule()
+        this.exceptionHandlersModule()
         this.routing {
             this.trace { this.application.log.trace(it.buildText()) }
-            this.registerStatusEndpoint()
-            this.registerWebhookEndpoint(config)
         }
+        this.statusModule()
+        this.webhookModule(config)
     }.start(wait = true)
     GlobalLifecycle.end()
 }
