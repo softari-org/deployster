@@ -6,7 +6,7 @@ on:
     branches: ["main"]
     paths:
       - .github/workflows/ktlint.yml
-      - 'src/**/*.kt'
+      - 'src/**.kt'
       - '**.kts'
   push:
     branches: ["main"]
