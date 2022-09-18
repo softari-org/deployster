@@ -4,14 +4,13 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.curl.Curl
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.accept
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
-import io.ktor.client.request.headers
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.URLProtocol
-import io.ktor.http.append
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
@@ -66,17 +65,15 @@ class GitHubAuthTest {
 
     companion object {
         private val testClient = HttpClient(Curl) {
-            defaultRequest {
-                url {
+            this.defaultRequest {
+                this.url {
                     host = "api.github.com"
                     protocol = URLProtocol.HTTPS
                 }
-                headers {
-                    append(HttpHeaders.ContentType, ContentType.Application.Json)
-                    append(HttpHeaders.Accept, ContentType("application", "vnd.github+json"))
-                }
+                this.contentType(ContentType.Application.Json)
+                this.accept(ContentType("application", "vnd.github+json"))
             }
-            install(Logging)
+            this.install(Logging)
         }
     }
 }
