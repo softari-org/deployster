@@ -1,7 +1,6 @@
 package opstopus.deploptopus
 
 import io.ktor.util.logging.KtorSimpleLogger
-import kotlinx.cinterop.toKString
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.decodeFromString
@@ -10,7 +9,6 @@ import opstopus.deploptopus.system.FileIO
 import opstopus.deploptopus.system.FileIOException
 import platform.posix.F_OK
 import platform.posix.access
-import platform.posix.getenv
 import kotlin.system.exitProcess
 
 @Serializable
@@ -33,10 +31,7 @@ data class Trigger(
  * Represents the configuration of this deploptopus.
  */
 @Serializable
-data class Config(val triggers: List<Trigger>) {
-    @Transient
-    val githubSecret: String = getenv("DEPLOPTOPUS_WEBHOOK_SECRET")?.toKString() ?: ""
-
+data class Config(val triggers: List<Trigger>, @Transient val githubWebhookSecret: String = "") {
     companion object {
         private val log = KtorSimpleLogger("Config")
 
