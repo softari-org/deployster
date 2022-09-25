@@ -6,7 +6,7 @@
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-gradle
 ---
 
-name: Build with Gradle
+name: Build and test with Gradle
 
 on:
   push:
@@ -48,14 +48,19 @@ jobs:
       # The Kotlin native compiler refuses to look for these object files in the right location
       - name: Copy crt objects
         run: sudo cp /usr/lib/x86_64-linux-gnu/crt* /usr/lib/
-      - name: Store private key
+      - name: Store GitHub private key
         env:
-          SECRET_KEY: ${{secrets.SECRET_PEM_KEYFILE}}
+          SECRET_KEY: ${{secrets.GH_APP_PRIVATE_PEM_KEYFILE}}
         run: echo "$SECRET_KEY" > github_private_key.pem
+      - name: Store SSH private key
+        env:
+          PRIVATE_KEY: ${{secrets.WEBHOOK_TEST_KEY_CONTENTS}}
+        run: echo "$PRIVATE_KEY" > id_rsa
       - name: Build with Gradle
         uses: gradle/gradle-build-action@c295a4096e1d2c453eaf1f65c6f96686e26bd8be
         env:
           GITHUB_APP_PRIVATE_PEM_KEYFILE: github_private_key.pem
-          GITHUB_APP_ID: ${{secrets.APP_ID}}
+          GITHUB_APP_ID: ${{secrets.GH_APP_ID}}
+          WEBHOOK_TEST_KEY: id_rsa
         with:
           arguments: build --info
