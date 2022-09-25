@@ -5,5 +5,6 @@ import kotlinx.serialization.json.Json
 
 val jsonFormatter = Json {
     ignoreUnknownKeys = true
-    @OptIn(ExperimentalSerializationApi::class) explicitNulls = false
+    @OptIn(ExperimentalSerializationApi::class)
+    explicitNulls = false
 }
