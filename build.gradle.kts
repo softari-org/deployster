@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
+
 val kotlinVersion: String by project
 val ktorVersion: String by project
 val logbackVersion: String by project
@@ -15,10 +17,10 @@ repositories {
     maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
 }
 
-kotlin {
+@Suppress("UnusedPrivateMember") kotlin {
     val nativeTarget = when (System.getProperty("os.name")) {
         "Linux" -> linuxX64("native")
-        else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+        else -> throw GradleException("Host OS is not supported.")
     }
 
     nativeTarget.apply {
@@ -43,7 +45,11 @@ kotlin {
                 val compilerArgs = "-Xoverride-konan-properties=$overriddenProperties"
                 this.freeCompilerArgs += listOf(compilerArgs)
                 this.entryPoint = "opstopus.deploptopus.main"
-                this@binaries.findTest("debug")?.let { it.freeCompilerArgs += listOf(compilerArgs) }
+                for (buildType in NativeBuildType.values()) {
+                    this@binaries.findTest(buildType)?.let {
+                        it.freeCompilerArgs += listOf(compilerArgs)
+                    }
+                }
             }
         }
     }
@@ -71,8 +77,6 @@ kotlin {
             dependencies {
                 implementation("org.jetbrains.kotlin:kotlin-test:$kotlinVersion")
                 implementation("io.ktor:ktor-server-test-host:$ktorVersion")
-                implementation("io.ktor:ktor-client-core:$ktorVersion")
-                implementation("io.ktor:ktor-client-curl:$ktorVersion")
             }
         }
     }
