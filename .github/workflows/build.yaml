@@ -57,7 +57,7 @@ jobs:
           PRIVATE_KEY: ${{secrets.WEBHOOK_TEST_KEY_CONTENTS}}
         run: echo "$PRIVATE_KEY" > id_rsa
       - name: Build with Gradle
-        uses: gradle/gradle-build-action@356abb47e7664b5505e25d7997a5a522a17c62d9
+        uses: gradle/gradle-build-action@c295a4096e1d2c453eaf1f65c6f96686e26bd8be
         env:
           GITHUB_APP_PRIVATE_PEM_KEYFILE: github_private_key.pem
           GITHUB_APP_ID: ${{secrets.GH_APP_ID}}
