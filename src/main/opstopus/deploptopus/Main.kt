@@ -108,13 +108,21 @@ internal fun Application.webhookModule(config: Config) {
             // Execute runners
             val outputs = triggersToRun.map {
                 this.application.log.info("Running deployment trigger for $eventRepository.")
-                return@map Runner.runRemote(
+                Runner.runRemote(
                     it.user,
                     it.host,
                     it.port,
                     it.key,
                     it.command
-                )
+                ).let { io ->
+                    if (io.status != EXIT_SUCCESS) {
+                        this.application.log.error("Runner failed with exit code ${io.status}.")
+                    } else {
+                        this.application.log.info("Runner succeeded.")
+                    }
+                    this.application.log.info(io.output)
+                    return@map io
+                }
             }
 
             if (outputs.all { it.status == EXIT_SUCCESS }) {
