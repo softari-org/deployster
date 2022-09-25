@@ -15,14 +15,13 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
 import opstopus.deploptopus.github.GitHubAuth
 import opstopus.deploptopus.github.JWT
 import opstopus.deploptopus.github.deploy.DeploymentStatus
 import opstopus.deploptopus.github.events.InstallationPayload
+import opstopus.deploptopus.serializers.jsonFormatter
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -52,9 +51,8 @@ class GitHubAuthTest {
 
             assertTrue(response.status.isSuccess(), response.status.toString())
 
-            val body = response.bodyAsText()
-            val installations = Json.decodeFromString<InstallationsPayload>(
-                "{\"installations\":$body}"
+            val installations = jsonFormatter.decodeFromString<InstallationsPayload>(
+                "{\"installations\":${response.bodyAsText()}}"
             ).installations
             assertTrue(installations.isNotEmpty(), "Missing test installation")
 
@@ -80,13 +78,7 @@ class GitHubAuthTest {
             }
             this.install(Logging)
             this.install(ContentNegotiation) {
-                json(
-                    Json {
-                        ignoreUnknownKeys = true
-                        @OptIn(ExperimentalSerializationApi::class)
-                        explicitNulls = false
-                    }
-                )
+                json(jsonFormatter)
             }
         }
     }
