@@ -55,7 +55,7 @@ jobs:
       - name: Store SSH private key
         env:
           PRIVATE_KEY: ${{secrets.WEBHOOK_TEST_KEY_CONTENTS}}
-        run: echo "$PRIVATE_KEY" > id_rsa
+        run: echo "$PRIVATE_KEY" > id_rsa && sudo chmod 600 "$PRIVATE_KEY"
       - name: Authorize SSH private key
         run: |
           mkdir -p ~/.ssh/ && \
