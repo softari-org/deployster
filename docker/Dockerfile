@@ -21,7 +21,7 @@ WORKDIR /opt/opstopus
 COPY --from=build /build/build/bin/native/releaseExecutable/deploptopus.kexe /usr/bin/deploptopus
 RUN \
    apt-get update && \
-   apt-get install -y --no-install-recommends libssl3 libcurl4 && \
+   apt-get install -y --no-install-recommends libssl3 libcurl4 openssh-client && \
    # Remove apt lists
    rm -rf /var/lib/apt/lists/*
 
