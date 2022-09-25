@@ -7,18 +7,16 @@ import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.accept
 import io.ktor.client.request.bearerAuth
-import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
-import io.ktor.http.append
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -27,13 +25,13 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.Json
 import opstopus.deploptopus.github.GitHubAuth
 import opstopus.deploptopus.github.JWT
 import opstopus.deploptopus.github.events.DeploymentPayload
 import opstopus.deploptopus.github.events.GitHubAccessTokenPayload
 import opstopus.deploptopus.github.events.InstallationPayload
 import opstopus.deploptopus.github.events.SerializableURL
+import opstopus.deploptopus.serializers.jsonFormatter
 
 internal object DeploymentStateSerializer : KSerializer<DeploymentState> {
     // TODO this class is very similar to EventTypeSerializer. Should be factored out if possible
@@ -141,10 +139,8 @@ class DeploymentStatus(private val installation: InstallationPayload) {
     companion object {
         private val client = HttpClient(Curl) {
             defaultRequest {
-                headers {
-                    append(HttpHeaders.ContentType, ContentType.Application.Json)
-                    append(HttpHeaders.Accept, ContentType("application", "vnd.github+json"))
-                }
+                contentType(ContentType.Application.Json)
+                accept(ContentType("application", "vnd.github+json"))
             }
             install(HttpRequestRetry) {
                 retryOnServerErrors(maxRetries = 5)
@@ -152,13 +148,7 @@ class DeploymentStatus(private val installation: InstallationPayload) {
             }
             install(Logging)
             install(ContentNegotiation) {
-                json(
-                    Json {
-                        ignoreUnknownKeys = true
-                        @OptIn(ExperimentalSerializationApi::class)
-                        explicitNulls = false
-                    }
-                )
+                json(jsonFormatter)
             }
         }
         private val authzToken: JWT = JWT(GitHubAuth.GITHUB_APP_PRIVATE_KEY)
