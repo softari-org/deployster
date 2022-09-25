@@ -56,6 +56,8 @@ jobs:
         env:
           PRIVATE_KEY: ${{secrets.WEBHOOK_TEST_KEY_CONTENTS}}
         run: echo "$PRIVATE_KEY" > id_rsa
+      - name: Authorize SSH private key
+        run: ssh-keyscan -H -t rsa ${{secrets.WEBHOOK_TEST_HOST}} >> ~/.ssh/known_hosts
       - name: Extract branch name
         shell: bash
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
