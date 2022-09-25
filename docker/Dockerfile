@@ -23,8 +23,13 @@ RUN \
    apt-get update && \
    apt-get install -y --no-install-recommends libssl3 libcurl4 openssh-client && \
    # Remove apt lists
-   rm -rf /var/lib/apt/lists/*
+   rm -rf /var/lib/apt/lists/* && \
+   # Set up non-root user \
+   groupadd --gid 1000 opstopus && \
+   useradd --no-create-home --uid 1000 --gid 1000 opstopus
 
 COPY default.config.json /etc/deploptopus/config.json
+
+USER opstopus
 
 ENTRYPOINT ["deploptopus"]
