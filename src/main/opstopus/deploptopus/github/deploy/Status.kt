@@ -51,9 +51,12 @@ internal object DeploymentStateSerializer : KSerializer<DeploymentState> {
 
 @Serializable(with = DeploymentStateSerializer::class)
 enum class DeploymentState(val state: String) {
-    ERROR("error"), FAILURE("failure"), INACTIVE("inactive"), IN_PROGRESS("in_progress"), QUEUED("queued"), PENDING(
-        "pending"
-    ),
+    ERROR("error"),
+    FAILURE("failure"),
+    INACTIVE("inactive"),
+    IN_PROGRESS("in_progress"),
+    QUEUED("queued"),
+    PENDING("pending"),
     SUCCESS("success");
 
     companion object {
