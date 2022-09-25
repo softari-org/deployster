@@ -17,6 +17,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -65,19 +66,18 @@ internal fun Application.statusModule() {
 }
 
 internal fun Application.webhookModule(config: Config) {
+    val formatter = Json {
+        ignoreUnknownKeys = true
+        @OptIn(ExperimentalSerializationApi::class)
+        explicitNulls = false
+    }
     routing {
         post("/") {
-            val eventName = this.call.request.header(GitHubHeaders.EVENT_TYPE.headerText)
-            // If an event name is not provided, it's an invalid request
-            if (eventName.isNullOrEmpty()) {
-                throw BadRequest("Header ${GitHubHeaders.EVENT_TYPE.headerText} required.")
-            }
-
             val requestBody = this.call.receiveText()
 
             // Decode the payload into the appropriate type
             val payload = try {
-                Json.decodeFromString<DeploymentEventPayload>(requestBody)
+                formatter.decodeFromString<DeploymentEventPayload>(requestBody)
             } catch (e: SerializationException) {
                 this.application.log.error(e.toString())
                 throw BadRequest("Unsupported event.")
@@ -97,7 +97,7 @@ internal fun Application.webhookModule(config: Config) {
             // Verify that incoming request is signed with our secret
             if (!Crypto.signatureIsValid(
                     requestBody,
-                    config.githubSecret,
+                    config.githubWebhookSecret,
                     this.call.request.header(GitHubHeaders.HUB_SIGNATURE_SHA_256.headerText)
                 )
             ) {
@@ -107,7 +107,7 @@ internal fun Application.webhookModule(config: Config) {
 
             // Execute runners
             val outputs = triggersToRun.map {
-                this.application.log.info("Running $eventName trigger for $eventRepository.")
+                this.application.log.info("Running deployment trigger for $eventRepository.")
                 return@map Runner.runRemote(
                     it.user,
                     it.host,
@@ -130,7 +130,7 @@ internal fun Application.webhookModule(config: Config) {
 }
 
 internal fun runServer(config: Config) {
-    embeddedServer(CIO, host = "localhost", port = 8080) {
+    embeddedServer(CIO, host = "0.0.0.0", port = 8080) {
         this.log.debug("Running with config: ${Json.encodeToString(config)}")
         this.serializersModule()
         this.exceptionHandlersModule()
