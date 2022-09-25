@@ -18,7 +18,7 @@ import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Instant
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -27,14 +27,12 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.Json
 import opstopus.deploptopus.github.GitHubAuth
 import opstopus.deploptopus.github.JWT
 import opstopus.deploptopus.github.events.DeploymentPayload
 import opstopus.deploptopus.github.events.GitHubAccessTokenPayload
-import opstopus.deploptopus.github.events.GitHubAccessTokenRequestPayload
 import opstopus.deploptopus.github.events.InstallationPayload
-import opstopus.deploptopus.github.events.PermissionsPayload
-import opstopus.deploptopus.github.events.SenderPayload
 import opstopus.deploptopus.github.events.SerializableURL
 
 internal object DeploymentStateSerializer : KSerializer<DeploymentState> {
@@ -77,27 +75,12 @@ data class DeploymentStatusCreateRequestPayload(
     @SerialName("auto_inactive") val autoInactive: Boolean? = null
 )
 
-@Serializable
-data class GitHubAppPayload(
-    val id: UInt,
-    val slug: String,
-    @SerialName("node_id") val nodeID: String,
-    val owner: SenderPayload,
-    val name: String,
-    val description: String?,
-    @SerialName("external_url") val externalURL: SerializableURL,
-    @SerialName("html_url") val htmlURL: SerializableURL,
-    @SerialName("created_at") val createdAt: Instant,
-    @SerialName("updated_at") val updatedAt: Instant,
-    val permissions: PermissionsPayload
-)
-
 /**
  * Manages deployment statuses for an app installation
  */
 class DeploymentStatus(private val installation: InstallationPayload) {
 
-    private val accessToken: GitHubAccessTokenPayload = this.refreshAccessToken(this.installation)
+    private val accessToken = this.refreshAccessToken(this.installation)
         ?: throw NullPointerException("Could not get initial GitHub access token.")
         get() {
             if (field.isExpired()) {
@@ -140,12 +123,6 @@ class DeploymentStatus(private val installation: InstallationPayload) {
         return runBlocking {
             val response = DeploymentStatus.client.post(installation.accessTokensURL) {
                 bearerAuth(DeploymentStatus.authzToken.jws)
-                setBody(
-                    GitHubAccessTokenRequestPayload(
-                        permissions = installation.permissions,
-                        repositories = installation.repositories?.map { it.name }
-                    )
-                )
             }
             if (response.status.isSuccess()) {
                 DeploymentStatus.logger.info(
@@ -175,7 +152,13 @@ class DeploymentStatus(private val installation: InstallationPayload) {
             }
             install(Logging)
             install(ContentNegotiation) {
-                json()
+                json(
+                    Json {
+                        ignoreUnknownKeys = true
+                        @OptIn(ExperimentalSerializationApi::class)
+                        explicitNulls = false
+                    }
+                )
             }
         }
         private val authzToken: JWT = JWT(GitHubAuth.GITHUB_APP_PRIVATE_KEY)
