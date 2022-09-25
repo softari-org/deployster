@@ -235,9 +235,7 @@ data class DeploymentEventPayload(
 @Serializable
 data class GitHubAccessTokenPayload(
     val token: String,
-    @SerialName("expires_at") val expiresAt: Instant,
-    @SerialName("repository_selection") val repositorySelection: String,
-    val repositories: List<RepositoryPayload>? = null
+    @SerialName("expires_at") val expiresAt: Instant
 ) {
     fun isExpired(): Boolean = this.expiresAt <= Clock.System.now() - 60.seconds
 }
