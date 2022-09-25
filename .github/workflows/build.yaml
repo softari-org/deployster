@@ -56,11 +56,20 @@ jobs:
         env:
           PRIVATE_KEY: ${{secrets.WEBHOOK_TEST_KEY_CONTENTS}}
         run: echo "$PRIVATE_KEY" > id_rsa
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
       - name: Build with Gradle
         uses: gradle/gradle-build-action@c295a4096e1d2c453eaf1f65c6f96686e26bd8be
         env:
           GITHUB_APP_PRIVATE_PEM_KEYFILE: github_private_key.pem
           GITHUB_APP_ID: ${{secrets.GH_APP_ID}}
+          WEBHOOK_TEST_HOST: ${{secrets.WEBHOOK_TEST_HOST}}
+          WEBHOOK_TEST_USER: ${{secrets.WEBHOOK_TEST_USER}}
           WEBHOOK_TEST_KEY: id_rsa
+          WEBHOOK_TEST_INSTALLATION_ID: ${{secrets.WEBHOOK_TEST_INSTALLATION_ID}}
+          WEBHOOK_TEST_REPO: ${{github.repository}}
+          WEBHOOK_TEST_REF: ${{ steps.extract_branch.outputs.branch }}
         with:
           arguments: build --info
