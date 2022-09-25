@@ -17,7 +17,8 @@ repositories {
     maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
 }
 
-@Suppress("UnusedPrivateMember") kotlin {
+@Suppress("UnusedPrivateMember")
+kotlin {
     val nativeTarget = when (System.getProperty("os.name")) {
         "Linux" -> linuxX64("native")
         else -> throw GradleException("Host OS is not supported.")
