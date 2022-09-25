@@ -53,6 +53,7 @@ data class RepositoryPayload(
     @SerialName("full_name") val fullName: String,
     @SerialName("private") val isPrivate: Boolean,
     val owner: SenderPayload,
+    val organization: OrganizationPayload?,
     @SerialName("html_url") val htmlURL: SerializableURL,
     val description: String?,
     val fork: Boolean,
@@ -124,7 +125,8 @@ data class RepositoryPayload(
     val forks: UInt,
     @SerialName("open_issues") val openIssues: UInt,
     val watchers: UInt,
-    @SerialName("default_branch") val defaultBranch: String
+    @SerialName("default_branch") val defaultBranch: String,
+    @SerialName("temp_clone_token") val tempCloneToken: String?
 )
 
 @Serializable
@@ -141,53 +143,21 @@ data class OrganizationPayload(
     val login: String,
     val id: UInt,
     @SerialName("node_id") val nodeID: String,
+    @SerialName("gravatar_id") val gravatarID: String,
     val url: SerializableURL,
+    @SerialName("html_url") val htmlURL: SerializableURL,
     @SerialName("repos_url") val reposURL: SerializableURL,
+    @SerialName("gists_url") val gistsURL: SerializableURL,
     @SerialName("events_url") val eventsURL: SerializableURL,
-    @SerialName("hooks_url") val hooksURL: SerializableURL,
-    @SerialName("issues_url") val issuesURL: SerializableURL,
-    @SerialName("members_url") val membersURL: SerializableURL,
-    @SerialName("public_members_url") val publicMembersURL: SerializableURL,
+    @SerialName("hooks_url") val hooksURL: SerializableURL?,
+    @SerialName("issues_url") val issuesURL: SerializableURL?,
+    @SerialName("members_url") val membersURL: SerializableURL?,
+    @SerialName("public_members_url") val publicMembersURL: SerializableURL?,
+    @SerialName("followers_url") val followersURL: SerializableURL,
+    @SerialName("following_url") val followingURL: SerializableURL,
     @SerialName("avatar_url") val avatarURL: SerializableURL,
+    @SerialName("gravatar_url") val gravatarURL: SerializableURL?,
     val description: String?
-)
-
-@Serializable
-data class PermissionsPayload(
-    val metadata: String? = null,
-    val issues: String? = null,
-    val discussions: String? = null,
-    val actions: String? = null,
-    val administration: String? = null,
-    val checks: String? = null,
-    val contents: String? = null,
-    val deployments: String? = null,
-    val environments: String? = null,
-    val packages: String? = null,
-    val pages: String? = null,
-    @SerialName("pull_requests") val pullRequests: String? = null,
-    @SerialName("merge_queues") val mergeQueues: String? = null,
-    @SerialName("repository_hooks") val repositoryHooks: String? = null,
-    @SerialName("repository_projects") val repositoryProjects: String? = null,
-    @SerialName("secret_scanning_alerts") val secretScanningAlerts: String? = null,
-    val secrets: String? = null,
-    @SerialName("security_events") val securityEvents: String? = null,
-    @SerialName("single_file") val singleFile: String? = null,
-    val statuses: String? = null,
-    @SerialName("vulnerability_alerts") val vulnerabilityAlerts: String? = null,
-    val workflows: String? = null,
-    val members: String? = null,
-    @SerialName("organization_administration") val organizationAdministration: String? = null,
-    @SerialName("organization_custom_roles") val organizationCustomRoles: String? = null,
-    @SerialName("organization_hooks") val organizationHooks: String? = null,
-    @SerialName("organization_plan") val organizationPlan: String? = null,
-    @SerialName("organization_events") val organizationEvents: String? = null,
-    @SerialName("organization_projects") val organizationProjects: String? = null,
-    @SerialName("organization_packages") val organizationPackages: String? = null,
-    @SerialName("organization_secrets") val organizationSecrets: String? = null,
-    @SerialName("organization_self_hosted_runners") val organizationSelfHostedRunners: String? = null,
-    @SerialName("organization_user_blocking") val organizationUserBlocking: String? = null,
-    @SerialName("team_discussions") val teamDiscussions: String? = null
 )
 
 @Serializable
@@ -201,7 +171,6 @@ data class InstallationPayload(
     @SerialName("app_id") val appID: UInt,
     @SerialName("target_id") val targetID: UInt,
     @SerialName("target_type") val targetType: String,
-    val permissions: PermissionsPayload,
     val events: List<String>,
     @SerialName("created_at") val createdAt: Instant,
     @SerialName("updated_at") val updatedAt: Instant,
@@ -267,20 +236,8 @@ data class DeploymentEventPayload(
 data class GitHubAccessTokenPayload(
     val token: String,
     @SerialName("expires_at") val expiresAt: Instant,
-    val permissions: PermissionsPayload,
     @SerialName("repository_selection") val repositorySelection: String,
-    val repositories: List<RepositoryPayload>
+    val repositories: List<RepositoryPayload>? = null
 ) {
-    fun isExpired(): Boolean = this.expiresAt >= Clock.System.now() - 60.seconds
+    fun isExpired(): Boolean = this.expiresAt <= Clock.System.now() - 60.seconds
 }
-
-/**
- * Represents the body of a request for a GitHub access token
- */
-@Serializable
-data class GitHubAccessTokenRequestPayload(
-    val repository: String? = null,
-    val repositories: List<String>? = null,
-    @SerialName("repository_ids") val repositoryIDs: List<UInt>? = null,
-    val permissions: PermissionsPayload? = null
-)
