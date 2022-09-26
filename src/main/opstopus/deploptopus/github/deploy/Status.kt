@@ -6,6 +6,7 @@ import io.ktor.client.engine.curl.Curl
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.accept
 import io.ktor.client.request.bearerAuth
@@ -171,7 +172,9 @@ class DeploymentStatus(private val installation: InstallationPayload) {
                 retryOnServerErrors(maxRetries = 5)
                 exponentialDelay()
             }
-            install(Logging)
+            install(Logging) {
+                this.level = LogLevel.INFO
+            }
             install(ContentNegotiation) {
                 json(jsonFormatter)
             }

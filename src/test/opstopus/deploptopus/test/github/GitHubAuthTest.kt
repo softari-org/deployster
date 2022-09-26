@@ -4,6 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.curl.Curl
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.accept
 import io.ktor.client.request.bearerAuth
@@ -76,7 +77,9 @@ class GitHubAuthTest {
                 this.contentType(ContentType.Application.Json)
                 this.accept(ContentType("application", "vnd.github+json"))
             }
-            this.install(Logging)
+            this.install(Logging) {
+                this.level = LogLevel.INFO
+            }
             this.install(ContentNegotiation) {
                 json(jsonFormatter)
             }
