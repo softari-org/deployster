@@ -52,6 +52,7 @@ internal fun Application.exceptionHandlersModule() {
         }
         // Resolve manually thrown HTTP errors
         this.exception<HttpException> { call, exc ->
+            call.application.log.warn("Failed to deploy: ${exc.message}")
             call.respond(exc.status, Error(exc.message))
         }
     }
@@ -76,16 +77,26 @@ internal fun Application.webhookModule(config: Config) {
             val requestBody = this.call.receiveText()
 
             // Decode the payload into the appropriate type
+            @Suppress("SwallowedException")
             val payload = try {
-                formatter.decodeFromString<DeploymentEventPayload>(requestBody)
+                val payload = formatter.decodeFromString<DeploymentEventPayload>(requestBody)
+                this.call.application.log.info(
+                    buildString {
+                        append("Received event for deployment ${payload.deployment.id} ")
+                        append("from ${payload.repository.fullName}")
+                    }
+                )
+                payload
             } catch (e: SerializationException) {
-                this.application.log.error(e.toString())
+                this.call.application.log.warn("Received bad POST request.")
                 throw BadRequest("Unsupported event.")
             }
 
             val eventRepository = payload.repository.fullName
             val installation = payload.installation ?: throw BadRequest("No installation provided")
             val deploymentStatus = DeploymentStatus(installation)
+
+            this.call.application.log.info("Beginning deployment for $eventRepository.")
 
             deploymentStatus.update(payload.deployment, DeploymentState.PENDING)
 
