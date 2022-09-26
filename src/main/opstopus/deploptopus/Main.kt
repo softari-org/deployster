@@ -153,9 +153,6 @@ internal fun runServer(config: Config) {
         this.log.debug("Running with config: ${Json.encodeToString(config)}")
         this.serializersModule()
         this.exceptionHandlersModule()
-        this.routing {
-            this.trace { this.application.log.trace(it.buildText()) }
-        }
         this.statusModule()
         this.webhookModule(config)
     }.start(wait = true)
