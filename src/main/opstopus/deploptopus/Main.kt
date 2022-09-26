@@ -77,7 +77,6 @@ internal fun Application.webhookModule(config: Config) {
             val requestBody = this.call.receiveText()
 
             // Decode the payload into the appropriate type
-            @Suppress("SwallowedException")
             val payload = try {
                 val payload = formatter.decodeFromString<DeploymentEventPayload>(requestBody)
                 this.call.application.log.info(
@@ -89,6 +88,8 @@ internal fun Application.webhookModule(config: Config) {
                 payload
             } catch (e: SerializationException) {
                 this.call.application.log.warn("Received bad POST request.")
+                this.call.application.log.debug(e.toString())
+                this.call.application.log.debug(requestBody)
                 throw BadRequest("Unsupported event.")
             }
 
