@@ -18,7 +18,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -73,6 +72,7 @@ internal fun Application.webhookModule(config: Config) {
         explicitNulls = false
     }
     routing {
+        @Suppress("TooGenericExceptionCaught")
         post("/") {
             val requestBody = this.call.receiveText()
 
@@ -86,7 +86,7 @@ internal fun Application.webhookModule(config: Config) {
                     }
                 )
                 payload
-            } catch (e: SerializationException) {
+            } catch (e: RuntimeException) {
                 this.call.application.log.warn("Received bad POST request.")
                 this.call.application.log.debug(e.toString())
                 this.call.application.log.debug(requestBody)
