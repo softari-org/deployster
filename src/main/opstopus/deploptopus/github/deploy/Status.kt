@@ -84,6 +84,15 @@ data class DeploymentStatusCreateRequestPayload(
  * Manages deployment statuses for an app installation
  */
 class DeploymentStatus(private val installation: InstallationPayload) {
+    private val accessToken = this.refreshAccessToken(this.installation)
+        ?: throw NullPointerException("Could not get initial GitHub access token.")
+        get() {
+            if (field.isExpired()) {
+                DeploymentStatus.logger.debug("Refreshing GitHub access token.")
+                return this.refreshAccessToken(this.installation) ?: field
+            }
+            return field
+        }
 
     constructor(installationID: UInt) : this(
         runBlocking {
@@ -102,15 +111,6 @@ class DeploymentStatus(private val installation: InstallationPayload) {
             }
         }
     )
-
-    private val accessToken = this.refreshAccessToken(this.installation)
-        ?: throw NullPointerException("Could not get initial GitHub access token.")
-        get() {
-            if (field.isExpired()) {
-                return this.refreshAccessToken(this.installation) ?: field
-            }
-            return field
-        }
 
     /**
      * Update the status of an existing deployment
@@ -179,6 +179,7 @@ class DeploymentStatus(private val installation: InstallationPayload) {
         private val installationToken: JWT = JWT(GitHubAuth.GITHUB_APP_PRIVATE_KEY)
             get() {
                 if (field.isExpired()) {
+                    this.logger.debug("Refreshing installation token.")
                     return JWT(GitHubAuth.GITHUB_APP_PRIVATE_KEY)
                 }
                 return field
