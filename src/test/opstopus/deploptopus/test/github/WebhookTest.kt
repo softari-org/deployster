@@ -30,6 +30,7 @@ import opstopus.deploptopus.github.events.DeploymentEventPayload
 import opstopus.deploptopus.github.events.DeploymentPayload
 import opstopus.deploptopus.github.events.GitHubAccessTokenPayload
 import opstopus.deploptopus.github.events.InstallationPayload
+import opstopus.deploptopus.github.events.PartialInstallationPayload
 import opstopus.deploptopus.github.events.RepositoryPayload
 import opstopus.deploptopus.serializersModule
 import opstopus.deploptopus.webhookModule
@@ -164,7 +165,7 @@ class WebhookTest {
             ),
             repository = testRepo,
             sender = testDeployment.creator!!,
-            installation = testInstallation
+            installation = PartialInstallationPayload(testInstallation.id)
         )
         val testBodyText = formatter.encodeToString(testBody)
         val testBodySignature = Crypto.signHMACSHA256(
