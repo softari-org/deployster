@@ -7,5 +7,5 @@
     <root level="trace">
         <appender-ref ref="STDOUT"/>
     </root>
-    <logger name="opstopus.deploptopus" level="INFO"/>
+    <logger name="opstopus.deploptopus" level="DEBUG"/>
 </configuration>
