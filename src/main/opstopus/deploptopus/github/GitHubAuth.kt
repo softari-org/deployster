@@ -69,7 +69,7 @@ class JWT(private val privateKeyRSA: PrivateKeyRSA) {
         return@lazy "${JWT.header}.$payload.$signature"
     }
 
-    fun isExpired(): Boolean = this.exp >= Clock.System.now() - 60.seconds
+    fun isExpired(): Boolean = Clock.System.now() >= this.exp - 60.seconds
 
     companion object {
         private val header = Crypto.encodeBase64URL("{\"alg\":\"RS256\",\"typ\":\"JWT\"}")
