@@ -2,9 +2,9 @@ package opstopus.deploptopus
 
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import opstopus.deploptopus.serializers.SecretSerializer
 import opstopus.deploptopus.system.FileIO
 import opstopus.deploptopus.system.FileIOException
 import platform.posix.F_OK
@@ -31,7 +31,10 @@ data class Trigger(
  * Represents the configuration of this deploptopus.
  */
 @Serializable
-data class Config(val triggers: List<Trigger>, @Transient val githubWebhookSecret: String = "") {
+data class Config(
+    val triggers: List<Trigger>,
+    @Serializable(with = SecretSerializer::class) val githubWebhookSecret: String
+) {
     companion object {
         private val log = KtorSimpleLogger("Config")
 
@@ -64,7 +67,9 @@ data class Config(val triggers: List<Trigger>, @Transient val githubWebhookSecre
                 log.error("Could not read config file at $configFilePath")
                 exitProcess(1)
             }
-            return Json.decodeFromString(configFile.read())
+            return Json.decodeFromString<Config>(configFile.read()).takeIf {
+                it.githubWebhookSecret.isNotEmpty()
+            } ?: throw MissingSecretException("Missing GitHub secret.")
         }
     }
 }
