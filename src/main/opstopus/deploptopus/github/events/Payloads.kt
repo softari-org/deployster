@@ -40,9 +40,6 @@ data class SenderPayload(
 data class RepositoryPayload(val name: String, @SerialName("full_name") val fullName: String)
 
 @Serializable
-data class PartialRepositoryPayload(val name: String, @SerialName("full_name") val fullName: String)
-
-@Serializable
 data class OrganizationPayload(
     val login: String,
     val id: UInt,
@@ -65,28 +62,12 @@ data class OrganizationPayload(
 )
 
 @Serializable
+data class PartialInstallationPayload(val id: UInt)
+
+@Serializable
 data class InstallationPayload(
     val id: UInt,
-    val account: SenderPayload,
-    @SerialName("repository_selection") val repositorySelection: String,
-    @SerialName("access_tokens_url") val accessTokensURL: SerializableURL,
-    @SerialName("repositories_url") val repositoriesURL: SerializableURL,
-    @SerialName("html_url") val htmlURL: SerializableURL,
-    @SerialName("app_id") val appID: UInt,
-    @SerialName("target_id") val targetID: UInt,
-    @SerialName("target_type") val targetType: String,
-    val events: List<String>,
-    @SerialName("created_at") val createdAt: Instant,
-    @SerialName("updated_at") val updatedAt: Instant,
-    @SerialName("single_file_name") val singleFileName: String?,
-    @SerialName("app_slug") val appSlug: String,
-    @SerialName("suspended_by") val suspendedBy: SenderPayload?,
-    @SerialName("suspended_at") val suspendedAt: Instant?,
-    @SerialName("contact_email") val contactEmail: String? = null,
-    val repositories: List<PartialRepositoryPayload>? = null,
-    val sender: SenderPayload? = null,
-    @SerialName("has_multiple_single_files") val hasMultipleFiles: Boolean? = null,
-    @SerialName("single_file_paths") val singleFilePaths: List<String>? = null
+    @SerialName("access_tokens_url") val accessTokensURL: SerializableURL
 )
 
 /**
@@ -99,7 +80,7 @@ sealed class EventPayload {
     abstract val sender: SenderPayload
     abstract val repository: RepositoryPayload?
     abstract val organization: OrganizationPayload?
-    abstract val installation: InstallationPayload?
+    abstract val installation: PartialInstallationPayload?
 }
 
 @Serializable
@@ -130,7 +111,7 @@ data class DeploymentEventPayload(
     override val repository: RepositoryPayload,
     override val sender: SenderPayload,
     override val organization: OrganizationPayload? = null,
-    override val installation: InstallationPayload? = null
+    override val installation: PartialInstallationPayload? = null
 ) : EventPayload()
 
 /**
