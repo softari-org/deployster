@@ -29,7 +29,8 @@ RUN \
    # Set up non-root user \
    groupadd --gid 1000 opstopus && \
    useradd --uid 1000 --gid 1000 opstopus && \
-   mkdir -p ~opstopus/.ssh/
+   mkdir --parents --mode 755 ~opstopus/.ssh/ && \
+   chown -R opstopus ~opstopus/.ssh/
 
 COPY default.config.json /etc/deploptopus/config.json
 
