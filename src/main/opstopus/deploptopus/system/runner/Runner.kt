@@ -28,7 +28,7 @@ object Runner {
         command: String
     ): RunnerIO {
         // Ensure that the provided key is usable
-        this.verifyHostKey(host)
+        this.verifyHostKey(host, port)
 
         val invocation = "ssh -i $key -l $user $host -p $port $command 2>&1"
         val io = FileIO(
@@ -46,12 +46,13 @@ object Runner {
     /**
      * Manually performs host key verification in case this is the first time connecting to the host
      */
-    private fun verifyHostKey(host: String) {
-        val keyScannerIO = FileIO(
-            popen("ssh-keyscan -t rsa $host >> ~/.ssh/known_hosts", "r")
-                ?: throw InternalServerError("Failed to open key scanner process."),
-            closeWith = { pclose(it) }
-        )
+    private fun verifyHostKey(host: String, port: UInt) {
+        val keyScannerIO =
+            FileIO(
+                popen("ssh-keyscan -t rsa -p $port $host >> ~/.ssh/known_hosts", "r")
+                    ?: throw InternalServerError("Failed to open key scanner process."),
+                closeWith = { pclose(it) }
+            )
 
         val output = keyScannerIO.read()
 
