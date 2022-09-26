@@ -28,7 +28,8 @@ RUN \
    rm -rf /var/lib/apt/lists/* && \
    # Set up non-root user \
    groupadd --gid 1000 opstopus && \
-   useradd --no-create-home --uid 1000 --gid 1000 opstopus
+   useradd --uid 1000 --gid 1000 opstopus && \
+   mkdir -p ~opstopus/.ssh/
 
 COPY default.config.json /etc/deploptopus/config.json
 
