@@ -1,5 +1,6 @@
 package opstopus.deploptopus.system.runner
 
+import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.serialization.Serializable
 import opstopus.deploptopus.InternalServerError
 import opstopus.deploptopus.system.FileIO
@@ -14,6 +15,8 @@ data class RunnerIO(val status: Int, val output: String)
  * Runs deployment tasks
  */
 object Runner {
+    val logger = KtorSimpleLogger("Runner")
+
     /**
      * Run a command on a remote server
      */
@@ -50,7 +53,10 @@ object Runner {
             closeWith = { pclose(it) }
         )
 
+        val output = keyScannerIO.read()
+
         if (keyScannerIO.close() != EXIT_SUCCESS) {
+            this.logger.error(output)
             throw InternalServerError("Failed to perform manual host key verification.")
         }
     }
