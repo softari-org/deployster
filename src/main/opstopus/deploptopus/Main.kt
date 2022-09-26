@@ -95,7 +95,7 @@ internal fun Application.webhookModule(config: Config) {
 
             val eventRepository = payload.repository.fullName
             val installation = payload.installation ?: throw BadRequest("No installation provided")
-            val deploymentStatus = DeploymentStatus(installation)
+            val deploymentStatus = DeploymentStatus(installation.id)
 
             this.call.application.log.info("Beginning deployment for $eventRepository.")
 

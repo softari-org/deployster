@@ -9,6 +9,7 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.accept
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -25,6 +26,7 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import opstopus.deploptopus.InternalServerError
 import opstopus.deploptopus.github.GitHubAuth
 import opstopus.deploptopus.github.JWT
 import opstopus.deploptopus.github.events.DeploymentPayload
@@ -81,6 +83,19 @@ data class DeploymentStatusCreateRequestPayload(
  */
 class DeploymentStatus(private val installation: InstallationPayload) {
 
+    constructor(installationID: UInt) : this(
+        runBlocking {
+            DeploymentStatus.client.get("/app/installations/$installationID") {
+                bearerAuth(DeploymentStatus.installationToken.jws)
+            }.let {
+                if (!it.status.isSuccess()) {
+                    throw InternalServerError("Could not fetch installtion from GitHub API.")
+                }
+                return@runBlocking it.body()
+            }
+        }
+    )
+
     private val accessToken = this.refreshAccessToken(this.installation)
         ?: throw NullPointerException("Could not get initial GitHub access token.")
         get() {
@@ -123,7 +138,7 @@ class DeploymentStatus(private val installation: InstallationPayload) {
     private fun refreshAccessToken(installation: InstallationPayload): GitHubAccessTokenPayload? {
         return runBlocking {
             val response = DeploymentStatus.client.post(installation.accessTokensURL) {
-                bearerAuth(DeploymentStatus.authzToken.jws)
+                bearerAuth(DeploymentStatus.installationToken.jws)
             }
             if (response.status.isSuccess()) {
                 DeploymentStatus.logger.info(
@@ -154,7 +169,7 @@ class DeploymentStatus(private val installation: InstallationPayload) {
                 json(jsonFormatter)
             }
         }
-        private val authzToken: JWT = JWT(GitHubAuth.GITHUB_APP_PRIVATE_KEY)
+        private val installationToken: JWT = JWT(GitHubAuth.GITHUB_APP_PRIVATE_KEY)
             get() {
                 if (field.isExpired()) {
                     return JWT(GitHubAuth.GITHUB_APP_PRIVATE_KEY)
