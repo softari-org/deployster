@@ -122,5 +122,5 @@ data class GitHubAccessTokenPayload(
     val token: String,
     @SerialName("expires_at") val expiresAt: Instant
 ) {
-    fun isExpired(): Boolean = this.expiresAt <= Clock.System.now() - 60.seconds
+    fun isExpired(): Boolean = this.expiresAt >= Clock.System.now() - 60.seconds
 }
