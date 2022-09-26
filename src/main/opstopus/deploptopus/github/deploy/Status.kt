@@ -13,8 +13,10 @@ import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.URLProtocol
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.ktor.http.path
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.util.logging.KtorSimpleLogger
 import kotlinx.coroutines.runBlocking
@@ -85,7 +87,12 @@ class DeploymentStatus(private val installation: InstallationPayload) {
 
     constructor(installationID: UInt) : this(
         runBlocking {
-            DeploymentStatus.client.get("/app/installations/$installationID") {
+            DeploymentStatus.client.get {
+                url {
+                    protocol = URLProtocol.HTTPS
+                    host = "api.github.com"
+                    path("app", "installations", installationID.toString())
+                }
                 bearerAuth(DeploymentStatus.installationToken.jws)
             }.let {
                 if (!it.status.isSuccess()) {
